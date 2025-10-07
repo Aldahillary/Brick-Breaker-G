@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brick Breaker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== MENU SCREEN ===== -->
+  <div id="menu" class="screen active">
+    <h1 class="game-title">BRICK <span>BREAKER</span></h1>
+    <div class="menu-buttons">
+      <button id="playBtn">🎮 Play Game</button>
+      <button id="levelBtn">📜 Select Level</button>
+      <button id="soundBtn">🔊 Sound: On</button>
+    </div>
+  </div>
+
+  <!-- ===== LEVEL SELECT SCREEN ===== -->
+  <div id="levelSelect" class="screen">
+    <h2>Select Level</h2>
+    <div class="levels-grid"></div>
+    <button id="backToMenu" class="back-btn">⬅ Back to Menu</button>
+  </div>
+
+  <!-- ===== GAME SCREEN ===== -->
+  <div id="gameScreen" class="screen">
+    <canvas id="gameCanvas" width="480" height="320"></canvas>
+  </div>
+
+  <!-- Link JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
