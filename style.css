@@ -14,44 +14,72 @@ body {
   justify-content: center;
   align-items: center;
   flex-direction: column;
+  position: relative;
 }
 
 .screen.active {
   display: flex;
 }
 
-/* ===== LOGIN SCREEN ===== */
-#loginScreen {
+/* ===== HOME SCREEN ===== */
+.home-background {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
   background: url('bricks-background.jpg') no-repeat center center/cover;
+  z-index: -1;
 }
 
-.login-container {
+.home-container {
+  text-align: center;
   background: rgba(0,0,0,0.6);
   padding: 30px;
   border-radius: 10px;
-  text-align: center;
 }
 
-.login-container input {
-  padding: 10px;
-  width: 200px;
-  margin-bottom: 10px;
-}
-
-.login-container button {
+.home-container button {
   padding: 10px 20px;
-  margin-top: 10px;
+  margin: 10px;
   cursor: pointer;
 }
 
-/* ===== MENU ===== */
+/* ===== AUTH FORMS ===== */
+.auth-form {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.8);
+  padding: 25px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auth-form input {
+  padding: 10px;
+  width: 200px;
+  margin: 5px 0;
+}
+
+.auth-form button {
+  padding: 10px 20px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+
+/* ===== MENU & LEVEL SELECT ===== */
 #menu button, #levelSelect button {
   padding: 10px 20px;
   margin: 5px;
   cursor: pointer;
 }
 
-/* ===== LEVEL GRID ===== */
 .levels-grid {
   display: flex;
   flex-wrap: wrap;
