@@ -362,6 +362,17 @@ document.addEventListener("mousemove", (e) => {
   paddle.x = mouseX - paddle.w / 2;
 });
 
+// Mobile touch control
+gameCanvas.addEventListener("touchmove", (e) => {
+  e.preventDefault(); // Prevent scrolling
+  const rect = gameCanvas.getBoundingClientRect();
+  let touchX = e.touches[0].clientX - rect.left;
+  // Prevent paddle leaving canvas
+  touchX = Math.max(paddle.w / 2, Math.min(gameCanvas.width - paddle.w / 2, touchX));
+  paddle.x = touchX - paddle.w / 2;
+});
+
 // ===== INITIALIZE =====
 createLevels();
 showScreen("menu");
+
