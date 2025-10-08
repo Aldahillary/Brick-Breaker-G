@@ -6,30 +6,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brick Breaker</title>
+  <title>Brick Breaker Game</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- MENU -->
-  <div id="menu" class="screen active">
-    <h1 class="game-title">BRICK <span>BREAKER</span></h1>
-    <div class="menu-buttons">
-      <button id="playBtn">🎮 Play Game</button>
-      <button id="levelBtn">📜 Select Level</button>
-      <button id="soundBtn">🔊 Sound: On</button>
-    </div>
+  <!-- Start Screen -->
+  <div id="startScreen" class="screen">
+    <h1>Brick Breaker</h1>
+    <button id="playBtn">Play Game</button>
+    <button id="levelBtn">Select Level</button>
   </div>
 
-  <!-- LEVEL SELECT -->
-  <div id="levelSelect" class="screen">
+  <!-- Level Select Screen -->
+  <div id="levelScreen" class="screen hidden">
     <h2>Select Level</h2>
-    <div class="levels-grid"></div>
-    <button id="backToMenu">⬅ Back to Menu</button>
+    <div id="levelGrid"></div>
+    <button id="backBtn">Back</button>
   </div>
 
-  <!-- GAME SCREEN -->
-  <div id="gameScreen" class="screen">
-    <canvas id="gameCanvas"></canvas>
+  <!-- Game Screen -->
+  <div id="gameScreen" class="screen hidden">
+    <div id="info">
+      <span id="levelDisplay">Level: 1</span>
+      <span id="scoreDisplay">Score: 0</span>
+      <span id="livesDisplay">Lives: ❤️❤️❤️</span>
+    </div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <button id="exitBtn">Exit</button>
   </div>
 
   <script src="script.js"></script>
