@@ -62,7 +62,7 @@ body {
 }
 
 .menu-buttons button {
-  padding: 12px 24px;
+  padding: 14px 28px;
   font-size: 1.2rem;
   border: none;
   border-radius: 12px;
@@ -89,8 +89,8 @@ body {
 
 .levels-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 12px;
   justify-content: center;
   width: 100%;
   max-width: 500px;
@@ -102,14 +102,13 @@ body {
 
 .levels-grid button {
   border: none;
-  padding: 10px;
+  padding: 12px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
   transition: 0.3s;
 }
 
-/* Level states */
 .levels-grid button.level-cleared { background: #32ff7e; color: #0b002b; }
 .levels-grid button.level-current { background: #fffa65; color: #0b002b; }
 .levels-grid button.level-locked { background: #555; color: #ccc; }
@@ -130,13 +129,15 @@ body {
 
 /* ===== GAME SCREEN ===== */
 #gameCanvas {
-  border: 2px solid #00e6ff;
+  border: 3px solid #00e6ff;
   border-radius: 12px;
-  box-shadow: 0 0 20px #00e6ff;
+  box-shadow: 0 0 25px #00e6ff;
   width: 95vw;
-  max-width: 480px;
-  height: 65vh;
+  max-width: 600px;
+  height: 75vh;
   background: radial-gradient(circle at top, #001a33, #00264d, #000);
+  display: block;
+  margin: 10px auto;
 }
 
 /* ===== HUD ===== */
@@ -147,17 +148,18 @@ body {
   width: 100%;
   display: flex;
   justify-content: space-around;
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: #fff;
   z-index: 10;
+  pointer-events: none;
 }
 
 /* ===== POPUP MESSAGES ===== */
 .message-box {
   position: absolute;
-  bottom: 10px;
-  background: rgba(0,0,0,0.6);
-  padding: 8px 16px;
+  bottom: 20px;
+  background: rgba(0,0,0,0.7);
+  padding: 10px 20px;
   border-radius: 10px;
   color: #fff;
   font-size: 1rem;
