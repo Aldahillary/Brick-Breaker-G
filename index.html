@@ -1,40 +1,102 @@
 <!-- Force GitHub Pages rebuild -->
 <!-- rebuild -->
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brick Breaker Game</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div id="startScreen" class="screen">
-    <h1>🌈 Brick Breaker 🌈</h1>
-    <button id="playBtn">Play Game</button>
-    <button id="levelBtn">Select Level</button>
-  </div>
+/* ===== BODY & BACKGROUND ===== */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111; /* dark clean background */
+  overflow: hidden;
+  color: #fff;
+}
 
-  <div id="levelScreen" class="screen hidden">
-    <h2>Select Level</h2>
-    <div id="levelGrid"></div>
-    <button id="backBtn">Back</button>
-  </div>
+/* ===== SCREENS ===== */
+.screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; }
+.hidden { display: none; }
 
-  <div id="gameScreen" class="screen hidden">
-    <div id="info">
-      <span id="levelDisplay">Level: 1</span>
-      <span id="scoreDisplay">Score: 0</span>
-      <span id="livesDisplay">Lives: ❤️❤️❤️</span>
-    </div>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <button id="exitBtn">Exit</button>
-  </div>
+/* ===== BUTTONS ===== */
+button {
+  padding: 15px 30px;
+  margin: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  background: #0ff; /* neon button */
+  color: #000;
+  box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+button:hover { transform: scale(1.1); box-shadow: 0 0 20px #0ff, 0 0 40px #0ff; }
 
-  <script src="script.js"></script>
-</body>
-</html>
+/* ===== LEVEL GRID ===== */
+#levelGrid { display: grid; grid-template-columns: repeat(10, 50px); grid-gap: 10px; margin-top: 20px; }
+.levelTile { width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 5px; font-weight: bold; box-shadow: 0 0 5px #fff; }
+.levelTile:hover { transform: scale(1.2); box-shadow: 0 0 15px #0ff; }
+
+/* ===== GAME CANVAS ===== */
+#gameCanvas {
+  background: #222;
+  display: block;
+  margin: 20px auto;
+  border: 3px solid #0ff;
+  max-width: 100%;
+  height: auto;
+  box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+}
+
+/* ===== TOP BAR ===== */
+#topBar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 280px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #0ff;
+}
+#livesContainer { display: flex; gap: 5px; }
+#levelDisplay { text-align: center; }
+#scoreDisplay {}
+
+/* ===== LIFE POPUP ===== */
+#lifePopup {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  font-size: 40px;
+  animation: lifePop 1s ease-out forwards;
+}
+@keyframes lifePop { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+
+/* ===== END POPUP ===== */
+#endPopup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.9);
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  color: #0ff;
+  box-shadow: 0 0 20px #0ff;
+}
+#endPopup button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 10px;
+  border: none;
+  background: #0ff;
+  color: #000;
+  box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+}
+
 
 
 
