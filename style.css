@@ -2,7 +2,7 @@
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
-  background: #1b1b1b;
+  background: linear-gradient(135deg, #1b0034, #003973); /* colorful gradient */
   color: #fff;
   display: flex;
   justify-content: center;
@@ -28,9 +28,13 @@ body {
 .game-title {
   font-size: 2.5rem;
   margin-bottom: 20px;
-}
-.game-title span {
   color: #00e6ff;
+  text-shadow: 0 0 10px #00e6ff, 0 0 20px #fffa65;
+  animation: glow 2s infinite alternate;
+}
+@keyframes glow {
+  from { text-shadow: 0 0 10px #00e6ff; }
+  to { text-shadow: 0 0 25px #fffa65, 0 0 45px #32ff7e; }
 }
 .menu-buttons button {
   margin: 10px;
@@ -79,10 +83,13 @@ body {
 
 /* ===== GAME CANVAS ===== */
 #gameCanvas {
-  background: #111;
+  background: radial-gradient(circle at top, #001a33, #003973); /* colorful gradient */
   border: 2px solid #00e6ff;
   border-radius: 8px;
   touch-action: none;
+  width: 100%; /* responsive width */
+  height: auto; /* maintain aspect ratio */
+  max-height: 80vh; /* fits mobile screen */
 }
 
 /* ===== OVERLAY ===== */
@@ -127,7 +134,7 @@ body {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255,0,0,0.4);
+  background: rgba(255,0,0,0.5);
   color: #fff;
   padding: 8px 16px;
   border-radius: 8px;
