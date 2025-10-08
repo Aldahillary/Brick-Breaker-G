@@ -6,6 +6,11 @@ const screens = {
   gameScreen: document.getElementById("gameScreen")
 };
 
+const homeCanvas = document.getElementById("homeCanvas");
+const hCtx = homeCanvas.getContext("2d");
+let bricksHome = [];
+
+// ===== AUTH ELEMENTS =====
 const loginBtnHome = document.getElementById("loginBtnHome");
 const createBtnHome = document.getElementById("createBtnHome");
 const loginForm = document.getElementById("loginForm");
@@ -48,10 +53,11 @@ let pointerX = null;
 function resizeCanvas() {
   const margin = 20;
   const maxWidth = 480;
-  const width = Math.min(window.innerWidth - margin, maxWidth);
-  const height = width * 0.75;
-  gameCanvas.width = width;
-  gameCanvas.height = height;
+  gameCanvas.width = Math.min(window.innerWidth - margin, maxWidth);
+  gameCanvas.height = gameCanvas.width * 0.75;
+
+  homeCanvas.width = window.innerWidth;
+  homeCanvas.height = window.innerHeight;
 
   if (paddle) {
     paddle.x = gameCanvas.width / 2 - paddle.w / 2;
@@ -65,6 +71,41 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
+// ===== HOME SCREEN ANIMATION =====
+function initHomeBricks() {
+  bricksHome = [];
+  const cols = 10;
+  const rows = 5;
+  const w = 50, h = 20;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      bricksHome.push({
+        x: c * (w + 10),
+        y: r * (h + 10),
+        w, h,
+        dx: Math.random() * 0.5 - 0.25,
+        dy: Math.random() * 0.5 - 0.25,
+        color: `hsl(${Math.random()*360},80%,60%)`
+      });
+    }
+  }
+}
+
+function drawHomeBricks() {
+  hCtx.clearRect(0, 0, homeCanvas.width, homeCanvas.height);
+  bricksHome.forEach(b => {
+    b.x += b.dx; b.y += b.dy;
+    // Bounce off edges
+    if(b.x < 0 || b.x + b.w > homeCanvas.width) b.dx *= -1;
+    if(b.y < 0 || b.y + b.h > homeCanvas.height) b.dy *= -1;
+    hCtx.fillStyle = b.color;
+    hCtx.fillRect(b.x, b.y, b.w, b.h);
+  });
+  requestAnimationFrame(drawHomeBricks);
+}
+initHomeBricks();
+drawHomeBricks();
+
 // ===== SHOW SCREEN =====
 function showScreen(screen) {
   Object.values(screens).forEach(s => s.classList.remove("active"));
@@ -73,12 +114,8 @@ function showScreen(screen) {
 }
 
 // ===== LOGIN / CREATE ACCOUNT LOGIC =====
-function getUsers() {
-  return JSON.parse(localStorage.getItem("users") || "{}");
-}
-function saveUsers(users) {
-  localStorage.setItem("users", JSON.stringify(users));
-}
+function getUsers() { return JSON.parse(localStorage.getItem("users") || "{}"); }
+function saveUsers(users) { localStorage.setItem("users", JSON.stringify(users)); }
 
 // Show login form
 loginBtnHome.addEventListener("click", () => {
@@ -98,74 +135,80 @@ createBack.addEventListener("click", () => createForm.classList.add("hidden"));
 createSubmit.addEventListener("click", () => {
   const u = createUsername.value.trim();
   const p = createPassword.value.trim();
-  if (!u || !p) return createMsg.textContent = "Enter username & password!";
+  createMsg.textContent = "";
+  if(!u||!p){ createMsg.textContent="Enter username & password!"; return; }
   const users = getUsers();
-  if (users[u]) return createMsg.textContent = "Username exists!";
-  users[u] = { password: p, lastLevel: 1 };
+  if(users[u]){ createMsg.textContent="Username exists!"; return; }
+  users[u] = { password: p, lastLevel:1 };
   saveUsers(users);
-  createMsg.textContent = "Account created! You can now log in.";
+  createMsg.textContent="Account created! Please log in.";
+  createUsername.value=""; createPassword.value="";
+  createForm.classList.add("hidden"); loginForm.classList.remove("hidden");
 });
 
 // Login submit
-loginSubmit.addEventListener("click", () => {
-  const u = loginUsername.value.trim();
-  const p = loginPassword.value.trim();
-  if (!u || !p) return loginMsg.textContent = "Enter username & password!";
-  const users = getUsers();
-  if (!users[u] || users[u].password !== p) return loginMsg.textContent = "Invalid credentials!";
-  currentUser = u;
-  currentLevel = users[u].lastLevel || 1;
+loginSubmit.addEventListener("click", ()=>{
+  const u=loginUsername.value.trim();
+  const p=loginPassword.value.trim();
+  loginMsg.textContent="";
+  if(!u||!p){ loginMsg.textContent="Enter username & password!"; return; }
+  const users=getUsers();
+  if(!users[u]||users[u].password!==p){ loginMsg.textContent="Invalid credentials!"; return; }
+  currentUser=u; currentLevel=users[u].lastLevel||1;
   loginForm.classList.add("hidden");
+  loginUsername.value=""; loginPassword.value=""; loginMsg.textContent="";
   showScreen("menu");
 });
 
+// Auto-login if user already logged in
+if(localStorage.getItem("lastUser")){
+  const lastUser = localStorage.getItem("lastUser");
+  const users = getUsers();
+  if(users[lastUser]){
+    currentUser=lastUser; currentLevel=users[lastUser].lastLevel||1;
+    showScreen("menu");
+  }
+}
+
 // Logout
-logoutBtn.addEventListener("click", () => {
-  currentUser = null;
+logoutBtn.addEventListener("click", ()=>{
+  localStorage.removeItem("lastUser");
+  currentUser=null;
   showScreen("home");
 });
 
+// Save progress per user
+function saveProgress(){
+  if(!currentUser) return;
+  const users=getUsers();
+  users[currentUser].lastLevel=currentLevel;
+  saveUsers(users);
+  localStorage.setItem("lastUser", currentUser);
+}
+
 // ===== MENU BUTTONS =====
-playBtn.onclick = () => startGame(currentLevel);
-levelBtn.onclick = () => showScreen("levelSelect");
-soundBtn.onclick = () => {
-  soundOn = !soundOn;
-  soundBtn.textContent = `Sound: ${soundOn ? "On 🔊" : "Off 🔇"}`;
+playBtn.onclick = ()=> startGame(currentLevel);
+levelBtn.onclick = ()=> showScreen("levelSelect");
+soundBtn.onclick = ()=>{
+  soundOn=!soundOn;
+  soundBtn.textContent=`Sound: ${soundOn?"On 🔊":"Off 🔇"}`;
 };
-backToMenu.onclick = () => showScreen("menu");
+backToMenu.onclick = ()=> showScreen("menu");
 
 // ===== LEVEL GRID =====
-function createLevels() {
-  levelGrid.innerHTML = "";
-  for (let i = 1; i <= totalLevels; i++) {
-    const btn = document.createElement("button");
-    btn.textContent = i;
-    if (i < currentLevel) btn.classList.add("level-cleared");
-    else if (i === currentLevel) btn.classList.add("level-current");
+function createLevels(){
+  levelGrid.innerHTML="";
+  for(let i=1;i<=totalLevels;i++){
+    const btn=document.createElement("button");
+    btn.textContent=i;
+    if(i<currentLevel) btn.classList.add("level-cleared");
+    else if(i===currentLevel) btn.classList.add("level-current");
     else btn.classList.add("level-locked");
-    btn.disabled = i > currentLevel;
-    btn.onclick = () => startGame(i);
+    btn.disabled=i>currentLevel;
+    btn.onclick=()=> startGame(i);
     levelGrid.appendChild(btn);
   }
 }
 
 // ===== REST OF GAME =====
-// Keep all your Brick Breaker game logic exactly the same as your current script
-// (setupGame, draw functions, gameLoop, resetBall, paddle/ball collision, power-ups, etc.)
-// Just before showing LevelComplete, save progress:
-
-function saveProgress() {
-  if (!currentUser) return;
-  const users = getUsers();
-  users[currentUser].lastLevel = currentLevel;
-  saveUsers(users);
-}
-
-function showLevelComplete() {
-  saveProgress();
-  currentLevel++;
-  gameRunning = false;
-  alert("Level Cleared!");
-  showScreen("menu");
-}
-
+// Keep all your Brick Breaker game logic exactly the same here, just call `saveProgress()` whenever level completes
