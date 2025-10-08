@@ -18,14 +18,16 @@ let soundOn = true;
 let currentLevel = 1;
 let totalLevels = 100;
 let playerLives = 3;
+let score = 0;
 let bricks = [];
 let ball, paddle;
 let gameRunning = false;
-let score = 0;
+let lifeLostTimeout;
+let ballSpeed = 3;
 
 // ===== SHOW SCREEN =====
 function showScreen(screen) {
-  Object.values(screens).forEach((s) => s.classList.remove("active"));
+  Object.values(screens).forEach(s => s.classList.remove("active"));
   screens[screen].classList.add("active");
   cancelAnimationFrame(gameLoopId);
 }
@@ -39,13 +41,12 @@ soundBtn.onclick = () => {
 };
 backToMenu.onclick = () => showScreen("menu");
 
-// ===== LEVEL GRID SETUP =====
+// ===== LEVEL GRID =====
 function createLevels() {
   levelGrid.innerHTML = "";
   for (let i = 1; i <= totalLevels; i++) {
     const btn = document.createElement("button");
     btn.textContent = i;
-
     if (i < currentLevel) btn.classList.add("level-cleared");
     else if (i === currentLevel) btn.classList.add("level-current");
     else btn.classList.add("level-locked");
@@ -64,10 +65,12 @@ function setupGame(level) {
   const brickWidth = gameCanvas.width / cols - 5;
   const brickHeight = 20;
 
-  // Dynamic brick patterns and colors
-  const brickColors = ["#ff3838", "#32ff7e", "#fffa65", "#00e6ff", "#ff9f1a"];
+  // Different color per level
+  const colors = ["#ff3838", "#32ff7e", "#fffa65", "#00e6ff", "#ff8c00"];
+
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
+      // Skip random bricks for pattern
       if (Math.random() > Math.min(level * 0.03, 0.7)) {
         bricks.push({
           x: c * (brickWidth + 5) + 5,
@@ -75,14 +78,14 @@ function setupGame(level) {
           w: brickWidth,
           h: brickHeight,
           broken: false,
-          color: brickColors[Math.floor(Math.random() * brickColors.length)],
+          color: colors[(r + c) % colors.length]
         });
       }
     }
   }
 
-  paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 20, w: 80, h: 10, speed: 8 };
-  ball = { x: gameCanvas.width / 2, y: gameCanvas.height - 40, r: 7, dx: 3, dy: -3 };
+  paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 30, w: 80, h: 10, dx: 0 };
+  ball = { x: gameCanvas.width / 2, y: gameCanvas.height - 50, r: 7, dx: ballSpeed, dy: -ballSpeed };
   playerLives = 3;
   score = 0;
   gameRunning = true;
@@ -90,7 +93,7 @@ function setupGame(level) {
 
 // ===== DRAW ELEMENTS =====
 function drawBricks() {
-  bricks.forEach((b) => {
+  bricks.forEach(b => {
     if (!b.broken) {
       ctx.fillStyle = b.color;
       ctx.fillRect(b.x, b.y, b.w, b.h);
@@ -137,48 +140,41 @@ function gameLoop() {
   if (ball.y - ball.r < 0) ball.dy *= -1;
 
   // Paddle collision
-  if (
-    ball.x > paddle.x &&
-    ball.x < paddle.x + paddle.w &&
-    ball.y + ball.r > paddle.y &&
-    ball.y - ball.r < paddle.y + paddle.h
-  ) {
+  if (ball.x > paddle.x && ball.x < paddle.x + paddle.w && ball.y + ball.r > paddle.y && ball.y - ball.r < paddle.y + paddle.h) {
     ball.dy *= -1;
   }
 
   // Brick collision
-  bricks.forEach((b) => {
-    if (!b.broken) {
-      if (
-        ball.x > b.x &&
-        ball.x < b.x + b.w &&
-        ball.y - ball.r < b.y + b.h &&
-        ball.y + ball.r > b.y
-      ) {
-        b.broken = true;
-        ball.dy *= -1;
-        score += 10;
-      }
+  bricks.forEach(b => {
+    if (!b.broken && ball.x > b.x && ball.x < b.x + b.w && ball.y - ball.r < b.y + b.h && ball.y + ball.r > b.y) {
+      b.broken = true;
+      ball.dy *= -1;
+      score += 10;
     }
   });
 
   // Lose life
   if (ball.y + ball.r > gameCanvas.height) {
     playerLives--;
+    showLifeLost();
     if (playerLives <= 0) {
       showGameOver();
       return;
     } else {
       resetBall();
-      showLifeLost();
     }
   }
 
   // Win level
-  if (bricks.every((b) => b.broken)) {
+  if (bricks.every(b => b.broken)) {
     showLevelComplete();
     return;
   }
+
+  // Paddle movement
+  paddle.x += paddle.dx;
+  if (paddle.x < 0) paddle.x = 0;
+  if (paddle.x + paddle.w > gameCanvas.width) paddle.x = gameCanvas.width - paddle.w;
 
   gameLoopId = requestAnimationFrame(gameLoop);
 }
@@ -186,77 +182,38 @@ function gameLoop() {
 // ===== RESET BALL =====
 function resetBall() {
   ball.x = gameCanvas.width / 2;
-  ball.y = gameCanvas.height - 40;
-  ball.dx = 3 * (Math.random() > 0.5 ? 1 : -1);
-  ball.dy = -3;
+  ball.y = gameCanvas.height - 50;
+  ball.dx = ballSpeed * (Math.random() > 0.5 ? 1 : -1);
+  ball.dy = -ballSpeed;
 }
 
 // ===== LIFE LOST POPUP =====
 function showLifeLost() {
-  const msg = document.createElement("div");
-  msg.className = "message-box show";
-  msg.textContent = "💔 Life Lost!";
-  document.body.appendChild(msg);
-
-  setTimeout(() => msg.remove(), 1000);
-}
-
-// ===== FIREWORKS =====
-function launchFireworks() {
-  const colors = ["#ff3838", "#32ff7e", "#fffa65", "#00e6ff", "#ff9f1a"];
-  for (let i = 0; i < 25; i++) {
-    const particle = document.createElement("div");
-    particle.style.position = "absolute";
-    particle.style.width = "6px";
-    particle.style.height = "6px";
-    particle.style.borderRadius = "50%";
-    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-    particle.style.left = `${gameCanvas.offsetLeft + gameCanvas.width / 2}px`;
-    particle.style.top = `${gameCanvas.offsetTop + gameCanvas.height / 2}px`;
-    particle.style.transition = "all 1s ease-out";
-    document.body.appendChild(particle);
-
-    setTimeout(() => {
-      particle.style.transform = `translate(${(Math.random() - 0.5) * 500}px, ${(Math.random() - 0.5) * 500}px)`;
-      particle.style.opacity = "0";
-    }, 50);
-
-    setTimeout(() => particle.remove(), 1200);
+  clearTimeout(lifeLostTimeout);
+  let box = document.querySelector(".message-box");
+  if (!box) {
+    box = document.createElement("div");
+    box.className = "message-box";
+    document.body.appendChild(box);
   }
+  box.textContent = "💔 Life Lost!";
+  box.classList.add("show");
+  lifeLostTimeout = setTimeout(() => box.classList.remove("show"), 1000);
 }
 
 // ===== POPUPS =====
-function showGameOver() {
-  gameRunning = false;
-  const overlay = createOverlay("Game Over 💀", [
-    { text: "Replay", action: () => startGame(currentLevel) },
-    { text: "Main Menu", action: () => showScreen("menu") },
-  ]);
-  document.body.appendChild(overlay);
-}
-
-function showLevelComplete() {
-  gameRunning = false;
-  launchFireworks();
-  const overlay = createOverlay("🎉 Level Cleared!", [
-    { text: "Next Level", action: () => startGame(currentLevel + 1) },
-    { text: "Main Menu", action: () => showScreen("menu") },
-  ]);
-  document.body.appendChild(overlay);
-}
-
 function createOverlay(title, buttons) {
   const overlay = document.createElement("div");
   overlay.className = "overlay";
-
+  
   const content = document.createElement("div");
   content.className = "overlay-content";
-
+  
   const heading = document.createElement("h2");
   heading.textContent = title;
   content.appendChild(heading);
-
-  buttons.forEach((b) => {
+  
+  buttons.forEach(b => {
     const btn = document.createElement("button");
     btn.textContent = b.text;
     btn.onclick = () => {
@@ -267,10 +224,51 @@ function createOverlay(title, buttons) {
   });
 
   overlay.appendChild(content);
-  return overlay;
+  document.body.appendChild(overlay);
 }
 
-// ===== GAME START =====
+function showGameOver() {
+  gameRunning = false;
+  createOverlay("Game Over 💀", [
+    { text: "Replay", action: () => startGame(currentLevel) },
+    { text: "Main Menu", action: () => showScreen("menu") },
+  ]);
+}
+
+function showLevelComplete() {
+  gameRunning = false;
+  createOverlay("🎉 Level Cleared!", [
+    { text: "Next Level", action: () => startGame(currentLevel + 1) },
+    { text: "Main Menu", action: () => showScreen("menu") },
+  ]);
+  launchFireworks();
+}
+
+// ===== FIREWORKS =====
+function launchFireworks() {
+  const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838"];
+  for (let i = 0; i < 20; i++) {
+    const particle = document.createElement("div");
+    particle.style.position = "absolute";
+    particle.style.width = "6px";
+    particle.style.height = "6px";
+    particle.style.borderRadius = "50%";
+    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+    particle.style.top = "50%";
+    particle.style.left = "50%";
+    particle.style.transition = "all 1s ease-out";
+    document.body.appendChild(particle);
+
+    setTimeout(() => {
+      particle.style.transform = `translate(${(Math.random()-0.5)*500}px, ${(Math.random()-0.5)*500}px)`;
+      particle.style.opacity = "0";
+    }, 50);
+
+    setTimeout(() => particle.remove(), 1200);
+  }
+}
+
+// ===== START GAME =====
 function startGame(level) {
   currentLevel = level;
   createLevels();
@@ -281,26 +279,28 @@ function startGame(level) {
 }
 
 // ===== CONTROLS =====
-// Mouse
-gameCanvas.addEventListener("mousemove", (e) => {
+// Mouse for desktop
+gameCanvas.addEventListener("mousemove", e => {
   const rect = gameCanvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
-  paddle.x = Math.min(Math.max(mouseX - paddle.w / 2, 0), gameCanvas.width - paddle.w);
+  paddle.x = mouseX - paddle.w / 2;
 });
 
-// Touch
-gameCanvas.addEventListener("touchmove", (e) => {
-  e.preventDefault();
+// Touch for mobile
+gameCanvas.addEventListener("touchmove", e => {
   const rect = gameCanvas.getBoundingClientRect();
   const touchX = e.touches[0].clientX - rect.left;
-  paddle.x = Math.min(Math.max(touchX - paddle.w / 2, 0), gameCanvas.width - paddle.w);
+  paddle.x = touchX - paddle.w / 2;
+  e.preventDefault();
 }, { passive: false });
 
-// Keyboard
-document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowLeft") paddle.x -= paddle.speed;
-  if (e.key === "ArrowRight") paddle.x += paddle.speed;
-  paddle.x = Math.min(Math.max(paddle.x, 0), gameCanvas.width - paddle.w);
+// Arrow keys
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") paddle.dx = -6;
+  if (e.key === "ArrowRight") paddle.dx = 6;
+});
+document.addEventListener("keyup", e => {
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") paddle.dx = 0;
 });
 
 // ===== INITIALIZE =====
