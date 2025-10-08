@@ -23,9 +23,6 @@ let ball, paddle;
 let gameRunning = false;
 let score = 0;
 
-let rightPressed = false;
-let leftPressed = false;
-
 // ===== SHOW SCREEN =====
 function showScreen(screen) {
   Object.values(screens).forEach((s) => s.classList.remove("active"));
@@ -56,47 +53,36 @@ function createLevels() {
     btn.onclick = () => startGame(i);
     levelGrid.appendChild(btn);
   }
+  // make grid scrollable on mobile
+  levelGrid.style.overflowY = "auto";
 }
 
-// ===== PREDEFINED PATTERNS =====
-function generatePattern(level) {
-  const rows = Math.min(3 + level, 8);
-  const cols = Math.min(5 + level, 12);
+// ===== GAME SETUP =====
+function setupGame(level) {
+  bricks = [];
+  const rows = 3 + Math.min(level, 7);
+  const cols = 5 + Math.min(level, 10);
   const brickWidth = gameCanvas.width / cols - 5;
   const brickHeight = 20;
-  const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838", "#ff66cc"];
 
-  bricks = [];
-
+  // Random brick patterns and colors
+  const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838", "#ff6ec7"];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      let addBrick = false;
-      switch (level % 5) {
-        case 1: addBrick = true; break;
-        case 2: if (c >= r && c < cols - r) addBrick = true; break;
-        case 3: if ((r + c) % 2 === 0) addBrick = true; break;
-        case 4: if (r % 2 === c % 2) addBrick = true; break;
-        case 0: addBrick = Math.random() > 0.3; break;
-      }
-      if (addBrick) {
+      if (Math.random() > Math.min(level * 0.03, 0.7)) {
         bricks.push({
           x: c * (brickWidth + 5) + 5,
           y: r * (brickHeight + 5) + 40,
           w: brickWidth,
           h: brickHeight,
           broken: false,
-          color: colors[r % colors.length],
+          color: colors[Math.floor(Math.random() * colors.length)]
         });
       }
     }
   }
-}
 
-// ===== GAME SETUP =====
-function setupGame(level) {
-  generatePattern(level);
-
-  paddle = { x: 0, y: gameCanvas.height - 20, w: 80, h: 10, speed: 7 };
+  paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 20, w: 80, h: 10 };
   ball = { x: gameCanvas.width / 2, y: gameCanvas.height - 40, r: 7, dx: 3, dy: -3 };
   playerLives = 3;
   score = 0;
@@ -134,6 +120,32 @@ function drawHUD() {
   ctx.fillText(`Score: ${score}`, 350, 20);
 }
 
+// ===== LIFE LOST POPUP =====
+function showLifeLost() {
+  const popup = document.createElement("div");
+  popup.textContent = "💔 Life Lost!";
+  popup.style.position = "absolute";
+  popup.style.bottom = "20px";
+  popup.style.left = "50%";
+  popup.style.transform = "translateX(-50%)";
+  popup.style.background = "rgba(255, 0, 0, 0.4)";
+  popup.style.color = "#fff";
+  popup.style.padding = "8px 16px";
+  popup.style.borderRadius = "8px";
+  popup.style.fontWeight = "bold";
+  popup.style.fontSize = "16px";
+  popup.style.opacity = "1";
+  popup.style.transition = "opacity 0.5s ease";
+  
+  document.body.appendChild(popup);
+
+  setTimeout(() => {
+    popup.style.opacity = "0";
+  }, 500);
+
+  setTimeout(() => popup.remove(), 1000);
+}
+
 // ===== GAME LOOP =====
 let gameLoopId;
 function gameLoop() {
@@ -143,7 +155,6 @@ function gameLoop() {
   drawBall();
   drawHUD();
 
-  // Ball movement
   ball.x += ball.dx;
   ball.y += ball.dy;
 
@@ -158,7 +169,7 @@ function gameLoop() {
     ball.y + ball.r > paddle.y &&
     ball.y - ball.r < paddle.y + paddle.h
   ) {
-    ball.dy = -Math.abs(ball.dy);
+    ball.dy *= -1;
   }
 
   // Brick collision
@@ -180,11 +191,11 @@ function gameLoop() {
   // Lose life
   if (ball.y + ball.r > gameCanvas.height) {
     playerLives--;
-    showLifeLostPopup();
     if (playerLives <= 0) {
       showGameOver();
       return;
     } else {
+      showLifeLost();
       resetBall();
     }
   }
@@ -194,13 +205,6 @@ function gameLoop() {
     showLevelComplete();
     return;
   }
-
-  // Paddle arrow movement
-  if (rightPressed) paddle.x += paddle.speed;
-  if (leftPressed) paddle.x -= paddle.speed;
-
-  // Clamp paddle fully
-  paddle.x = Math.max(0, Math.min(gameCanvas.width - paddle.w, paddle.x));
 
   gameLoopId = requestAnimationFrame(gameLoop);
 }
@@ -213,45 +217,7 @@ function resetBall() {
   ball.dy = -3;
 }
 
-// ===== LIFE LOST POPUP =====
-function showLifeLostPopup() {
-  const popup = document.createElement("div");
-  popup.className = "message-box";
-  popup.textContent = "💔 Life Lost!";
-  popup.style.position = "absolute";
-  popup.style.top = "10%"; // top instead of middle
-  popup.style.left = "50%";
-  popup.style.transform = "translateX(-50%)";
-  popup.style.padding = "10px 20px";
-  popup.style.background = "rgba(255,0,0,0.7)";
-  popup.style.color = "#fff";
-  popup.style.borderRadius = "10px";
-  popup.style.fontSize = "18px";
-  popup.style.zIndex = "1000";
-  document.body.appendChild(popup);
-  setTimeout(() => popup.remove(), 800);
-}
-
 // ===== POPUPS =====
-function showGameOver() {
-  gameRunning = false;
-  const overlay = createOverlay("Game Over 💀", [
-    { text: "Replay", action: () => startGame(currentLevel) },
-    { text: "Main Menu", action: () => showScreen("menu") },
-  ]);
-  document.body.appendChild(overlay);
-}
-
-function showLevelComplete() {
-  gameRunning = false;
-  const overlay = createOverlay("🎉 Level Cleared!", [
-    { text: "Next Level", action: () => startGame(currentLevel + 1) },
-    { text: "Main Menu", action: () => showScreen("menu") },
-  ]);
-  document.body.appendChild(overlay);
-}
-
-// ===== OVERLAY CREATION =====
 function createOverlay(title, buttons) {
   const overlay = document.createElement("div");
   overlay.className = "overlay";
@@ -274,7 +240,48 @@ function createOverlay(title, buttons) {
   });
 
   overlay.appendChild(content);
-  return overlay;
+  document.body.appendChild(overlay);
+}
+
+function showGameOver() {
+  gameRunning = false;
+  createOverlay("Game Over 💀", [
+    { text: "Replay", action: () => startGame(currentLevel) },
+    { text: "Main Menu", action: () => showScreen("menu") },
+  ]);
+}
+
+function showLevelComplete() {
+  gameRunning = false;
+  createOverlay("🎉 Level Cleared!", [
+    { text: "Next Level", action: () => startGame(currentLevel + 1) },
+    { text: "Main Menu", action: () => showScreen("menu") },
+  ]);
+  launchFireworks();
+}
+
+// ===== FIREWORKS =====
+function launchFireworks() {
+  const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838"];
+  for (let i = 0; i < 20; i++) {
+    const particle = document.createElement("div");
+    particle.style.position = "absolute";
+    particle.style.width = "6px";
+    particle.style.height = "6px";
+    particle.style.borderRadius = "50%";
+    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+    particle.style.top = "50%";
+    particle.style.left = "50%";
+    particle.style.transition = "all 1s ease-out";
+    document.body.appendChild(particle);
+
+    setTimeout(() => {
+      particle.style.transform = `translate(${(Math.random()-0.5)*500}px, ${(Math.random()-0.5)*500}px)`;
+      particle.style.opacity = "0";
+    }, 50);
+
+    setTimeout(() => particle.remove(), 1200);
+  }
 }
 
 // ===== GAME START =====
@@ -288,25 +295,31 @@ function startGame(level) {
 }
 
 // ===== CONTROLS =====
+// Mouse
 gameCanvas.addEventListener("mousemove", (e) => {
   const rect = gameCanvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  paddle.x = Math.max(0, Math.min(gameCanvas.width - paddle.w, mouseX - paddle.w / 2));
+  let mouseX = e.clientX - rect.left;
+  mouseX = Math.max(paddle.w/2, Math.min(mouseX, gameCanvas.width - paddle.w/2));
+  paddle.x = mouseX - paddle.w/2;
 });
+
+// Touch
 gameCanvas.addEventListener("touchmove", (e) => {
   e.preventDefault();
   const rect = gameCanvas.getBoundingClientRect();
-  const touchX = e.touches[0].clientX - rect.left;
-  paddle.x = Math.max(0, Math.min(gameCanvas.width - paddle.w, touchX - paddle.w / 2));
+  let touchX = e.touches[0].clientX - rect.left;
+  touchX = Math.max(paddle.w/2, Math.min(touchX, gameCanvas.width - paddle.w/2));
+  paddle.x = touchX - paddle.w/2;
 }, { passive: false });
 
+// Arrow keys
 document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowRight") rightPressed = true;
-  if (e.key === "ArrowLeft") leftPressed = true;
-});
-document.addEventListener("keyup", (e) => {
-  if (e.key === "ArrowRight") rightPressed = false;
-  if (e.key === "ArrowLeft") leftPressed = false;
+  const speed = 15;
+  if (e.key === "ArrowLeft") {
+    paddle.x = Math.max(0, paddle.x - speed);
+  } else if (e.key === "ArrowRight") {
+    paddle.x = Math.min(gameCanvas.width - paddle.w, paddle.x + speed);
+  }
 });
 
 // ===== INITIALIZE =====
