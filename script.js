@@ -45,6 +45,7 @@ function createLevels() {
   for (let i = 1; i <= totalLevels; i++) {
     const btn = document.createElement("button");
     btn.textContent = i;
+
     if (i < currentLevel) btn.classList.add("level-cleared");
     else if (i === currentLevel) btn.classList.add("level-current");
     else btn.classList.add("level-locked");
@@ -53,8 +54,6 @@ function createLevels() {
     btn.onclick = () => startGame(i);
     levelGrid.appendChild(btn);
   }
-  // make grid scrollable on mobile
-  levelGrid.style.overflowY = "auto";
 }
 
 // ===== GAME SETUP =====
@@ -65,8 +64,8 @@ function setupGame(level) {
   const brickWidth = gameCanvas.width / cols - 5;
   const brickHeight = 20;
 
-  // Random brick patterns and colors
-  const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838", "#ff6ec7"];
+  // Dynamic brick patterns and colors
+  const brickColors = ["#ff3838", "#32ff7e", "#fffa65", "#00e6ff", "#ff9f1a"];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (Math.random() > Math.min(level * 0.03, 0.7)) {
@@ -76,13 +75,13 @@ function setupGame(level) {
           w: brickWidth,
           h: brickHeight,
           broken: false,
-          color: colors[Math.floor(Math.random() * colors.length)]
+          color: brickColors[Math.floor(Math.random() * brickColors.length)],
         });
       }
     }
   }
 
-  paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 20, w: 80, h: 10 };
+  paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 20, w: 80, h: 10, speed: 8 };
   ball = { x: gameCanvas.width / 2, y: gameCanvas.height - 40, r: 7, dx: 3, dy: -3 };
   playerLives = 3;
   score = 0;
@@ -116,34 +115,8 @@ function drawHUD() {
   ctx.font = "16px Poppins";
   ctx.fillStyle = "#fff";
   ctx.fillText(`Lives: ${playerLives}`, 10, 20);
-  ctx.fillText(`Level: ${currentLevel}`, 200, 20);
-  ctx.fillText(`Score: ${score}`, 350, 20);
-}
-
-// ===== LIFE LOST POPUP =====
-function showLifeLost() {
-  const popup = document.createElement("div");
-  popup.textContent = "💔 Life Lost!";
-  popup.style.position = "absolute";
-  popup.style.bottom = "20px";
-  popup.style.left = "50%";
-  popup.style.transform = "translateX(-50%)";
-  popup.style.background = "rgba(255, 0, 0, 0.4)";
-  popup.style.color = "#fff";
-  popup.style.padding = "8px 16px";
-  popup.style.borderRadius = "8px";
-  popup.style.fontWeight = "bold";
-  popup.style.fontSize = "16px";
-  popup.style.opacity = "1";
-  popup.style.transition = "opacity 0.5s ease";
-  
-  document.body.appendChild(popup);
-
-  setTimeout(() => {
-    popup.style.opacity = "0";
-  }, 500);
-
-  setTimeout(() => popup.remove(), 1000);
+  ctx.fillText(`Level: ${currentLevel}`, gameCanvas.width / 2 - 30, 20);
+  ctx.fillText(`Score: ${score}`, gameCanvas.width - 90, 20);
 }
 
 // ===== GAME LOOP =====
@@ -155,6 +128,7 @@ function gameLoop() {
   drawBall();
   drawHUD();
 
+  // Ball movement
   ball.x += ball.dx;
   ball.y += ball.dy;
 
@@ -195,8 +169,8 @@ function gameLoop() {
       showGameOver();
       return;
     } else {
-      showLifeLost();
       resetBall();
+      showLifeLost();
     }
   }
 
@@ -217,7 +191,60 @@ function resetBall() {
   ball.dy = -3;
 }
 
+// ===== LIFE LOST POPUP =====
+function showLifeLost() {
+  const msg = document.createElement("div");
+  msg.className = "message-box show";
+  msg.textContent = "💔 Life Lost!";
+  document.body.appendChild(msg);
+
+  setTimeout(() => msg.remove(), 1000);
+}
+
+// ===== FIREWORKS =====
+function launchFireworks() {
+  const colors = ["#ff3838", "#32ff7e", "#fffa65", "#00e6ff", "#ff9f1a"];
+  for (let i = 0; i < 25; i++) {
+    const particle = document.createElement("div");
+    particle.style.position = "absolute";
+    particle.style.width = "6px";
+    particle.style.height = "6px";
+    particle.style.borderRadius = "50%";
+    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+    particle.style.left = `${gameCanvas.offsetLeft + gameCanvas.width / 2}px`;
+    particle.style.top = `${gameCanvas.offsetTop + gameCanvas.height / 2}px`;
+    particle.style.transition = "all 1s ease-out";
+    document.body.appendChild(particle);
+
+    setTimeout(() => {
+      particle.style.transform = `translate(${(Math.random() - 0.5) * 500}px, ${(Math.random() - 0.5) * 500}px)`;
+      particle.style.opacity = "0";
+    }, 50);
+
+    setTimeout(() => particle.remove(), 1200);
+  }
+}
+
 // ===== POPUPS =====
+function showGameOver() {
+  gameRunning = false;
+  const overlay = createOverlay("Game Over 💀", [
+    { text: "Replay", action: () => startGame(currentLevel) },
+    { text: "Main Menu", action: () => showScreen("menu") },
+  ]);
+  document.body.appendChild(overlay);
+}
+
+function showLevelComplete() {
+  gameRunning = false;
+  launchFireworks();
+  const overlay = createOverlay("🎉 Level Cleared!", [
+    { text: "Next Level", action: () => startGame(currentLevel + 1) },
+    { text: "Main Menu", action: () => showScreen("menu") },
+  ]);
+  document.body.appendChild(overlay);
+}
+
 function createOverlay(title, buttons) {
   const overlay = document.createElement("div");
   overlay.className = "overlay";
@@ -240,48 +267,7 @@ function createOverlay(title, buttons) {
   });
 
   overlay.appendChild(content);
-  document.body.appendChild(overlay);
-}
-
-function showGameOver() {
-  gameRunning = false;
-  createOverlay("Game Over 💀", [
-    { text: "Replay", action: () => startGame(currentLevel) },
-    { text: "Main Menu", action: () => showScreen("menu") },
-  ]);
-}
-
-function showLevelComplete() {
-  gameRunning = false;
-  createOverlay("🎉 Level Cleared!", [
-    { text: "Next Level", action: () => startGame(currentLevel + 1) },
-    { text: "Main Menu", action: () => showScreen("menu") },
-  ]);
-  launchFireworks();
-}
-
-// ===== FIREWORKS =====
-function launchFireworks() {
-  const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838"];
-  for (let i = 0; i < 20; i++) {
-    const particle = document.createElement("div");
-    particle.style.position = "absolute";
-    particle.style.width = "6px";
-    particle.style.height = "6px";
-    particle.style.borderRadius = "50%";
-    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-    particle.style.top = "50%";
-    particle.style.left = "50%";
-    particle.style.transition = "all 1s ease-out";
-    document.body.appendChild(particle);
-
-    setTimeout(() => {
-      particle.style.transform = `translate(${(Math.random()-0.5)*500}px, ${(Math.random()-0.5)*500}px)`;
-      particle.style.opacity = "0";
-    }, 50);
-
-    setTimeout(() => particle.remove(), 1200);
-  }
+  return overlay;
 }
 
 // ===== GAME START =====
@@ -298,28 +284,23 @@ function startGame(level) {
 // Mouse
 gameCanvas.addEventListener("mousemove", (e) => {
   const rect = gameCanvas.getBoundingClientRect();
-  let mouseX = e.clientX - rect.left;
-  mouseX = Math.max(paddle.w/2, Math.min(mouseX, gameCanvas.width - paddle.w/2));
-  paddle.x = mouseX - paddle.w/2;
+  const mouseX = e.clientX - rect.left;
+  paddle.x = Math.min(Math.max(mouseX - paddle.w / 2, 0), gameCanvas.width - paddle.w);
 });
 
 // Touch
 gameCanvas.addEventListener("touchmove", (e) => {
   e.preventDefault();
   const rect = gameCanvas.getBoundingClientRect();
-  let touchX = e.touches[0].clientX - rect.left;
-  touchX = Math.max(paddle.w/2, Math.min(touchX, gameCanvas.width - paddle.w/2));
-  paddle.x = touchX - paddle.w/2;
+  const touchX = e.touches[0].clientX - rect.left;
+  paddle.x = Math.min(Math.max(touchX - paddle.w / 2, 0), gameCanvas.width - paddle.w);
 }, { passive: false });
 
-// Arrow keys
+// Keyboard
 document.addEventListener("keydown", (e) => {
-  const speed = 15;
-  if (e.key === "ArrowLeft") {
-    paddle.x = Math.max(0, paddle.x - speed);
-  } else if (e.key === "ArrowRight") {
-    paddle.x = Math.min(gameCanvas.width - paddle.w, paddle.x + speed);
-  }
+  if (e.key === "ArrowLeft") paddle.x -= paddle.speed;
+  if (e.key === "ArrowRight") paddle.x += paddle.speed;
+  paddle.x = Math.min(Math.max(paddle.x, 0), gameCanvas.width - paddle.w);
 });
 
 // ===== INITIALIZE =====
