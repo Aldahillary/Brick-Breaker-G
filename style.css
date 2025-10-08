@@ -70,7 +70,12 @@ body {
   gap: 10px;
   justify-content: center;
   width: 90%;
-  max-width: 400px;
+  max-width: 500px;
+  margin-bottom: 20px;
+  overflow-y: auto; /* allow scrolling */
+  max-height: 60vh; /* keep it constrained */
+  padding: 10px;
+  touch-action: manipulation; /* fixes mobile scrolling */
 }
 
 .levels-grid button {
@@ -79,6 +84,9 @@ body {
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
+  transition: 0.3s;
+  background: #00e6ff; 
+  color: #0b002b;
 }
 
 .level-cleared { background: #32ff7e; color: #0b002b; }
@@ -144,3 +152,4 @@ body {
   font-weight: bold;
   cursor: pointer;
 }
+
