@@ -1,42 +1,59 @@
-/* ===== GENERAL ===== */
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-body { background: linear-gradient(135deg, #1b0034, #003973); color: #fff; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background: #111;
+  color: #fff;
+}
 
-/* ===== SCREENS ===== */
-.screen { position: absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction: column; align-items:center; justify-content:center; text-align:center; }
-.screen.active { display:flex; animation: fadeIn 0.5s ease-in-out; }
-@keyframes fadeIn { from {opacity:0; transform:scale(0.97);} to {opacity:1; transform:scale(1);} }
+.screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
 
-/* ===== MENU ===== */
-.game-title { font-size:3rem; color:#00e6ff; text-shadow:0 0 10px #00e6ff; margin-bottom:40px; animation: glow 2s infinite alternate; }
-@keyframes glow { from {text-shadow:0 0 10px #00e6ff;} to {text-shadow:0 0 25px #00ffff,0 0 45px #00e6ff;} }
-.menu-buttons { display:flex; flex-direction:column; gap:20px; }
-.menu-buttons button { padding:14px 28px; font-size:1.2rem; border:none; border-radius:12px; background: rgba(0,230,255,0.15); color:#fff; cursor:pointer; box-shadow:0 0 10px #00e6ff; transition:0.3s; }
-.menu-buttons button:hover { background:#00e6ff; color:#0b002b; box-shadow:0 0 20px #00e6ff,0 0 40px #00ffff; }
+.hidden {
+  display: none;
+}
 
-/* ===== LEVEL SELECT ===== */
-#levelSelect h2 { font-size:2rem; margin-bottom:20px; color:#00e6ff; text-shadow:0 0 10px #00e6ff; }
-.levels-grid { display:grid; grid-template-columns:repeat(auto-fill,50px); gap:10px; justify-content:center; width:90%; max-width:500px; margin-bottom:20px; overflow-y:auto; max-height:60vh; padding:10px; }
-.levels-grid button { border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.3s; }
-.levels-grid button.level-cleared { background:#32ff7e; color:#0b002b; }
-.levels-grid button.level-current { background:#fffa65; color:#0b002b; }
-.levels-grid button.level-locked { background:#555; color:#ccc; }
-#backToMenu { margin-top:20px; padding:10px 20px; background:#00e6ff; border:none; border-radius:10px; color:#0b002b; font-weight:bold; cursor:pointer; box-shadow:0 0 10px #00e6ff; }
-#backToMenu:hover { background:#00ffff; }
+button {
+  padding: 10px 20px;
+  margin: 10px;
+  font-size: 18px;
+  cursor: pointer;
+}
 
-/* ===== GAME CANVAS ===== */
-#gameCanvas { border:2px solid #00e6ff; background: radial-gradient(circle at top, #001a33, #000); border-radius:10px; box-shadow:0 0 20px #00e6ff; width:95vw; max-width:480px; height:70vh; }
+#levelGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 50px);
+  grid-gap: 10px;
+  margin-top: 20px;
+}
 
-/* ===== HUD ===== */
-.hud { position:absolute; top:10px; width:100%; display:flex; justify-content:space-around; font-size:1rem; color:#fff; z-index:10; }
+.levelTile {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 5px;
+  color: #000;
+  font-weight: bold;
+}
 
-/* ===== MESSAGE BOX ===== */
-.message-box { position:absolute; bottom:20px; background: rgba(0,0,0,0.6); padding:10px 20px; border-radius:10px; color:#fff; font-size:1rem; opacity:0; transition:opacity 0.4s ease; }
-.message-box.show { opacity:1; }
+#gameCanvas {
+  background: #222;
+  display: block;
+  margin: 20px auto;
+  border: 2px solid #fff;
+}
 
-/* ===== OVERLAY ===== */
-.overlay { position:absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:999; }
-.overlay-content { background: rgba(0,0,40,0.8); border:2px solid #00e6ff; border-radius:12px; padding:30px 40px; text-align:center; box-shadow:0 0 20px #00e6ff; }
-.overlay-content h2 { color:#00e6ff; margin-bottom:20px; }
-.overlay-content button { display:block; margin:10px auto; padding:10px 20px; border:none; border-radius:10px; background:#00e6ff; color:#0b002b; font-weight:bold; cursor:pointer; box-shadow:0 0 10px #00e6ff; transition:0.3s; }
-.overlay-content button:hover { background:#00ffff; box-shadow:0 0 20px #00ffff,0 0 40px #00e6ff; }
+#info {
+  display: flex;
+  justify-content: space-around;
+  font-size: 20px;
+  margin-top: 10px;
+}
