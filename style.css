@@ -100,7 +100,10 @@ body {
   border-radius: 10px;
   box-shadow: 0 0 20px #00e6ff;
   background: radial-gradient(circle at top, #001a33, #000);
-  touch-action: none; /* disables scrolling on touch */
+  touch-action: none;
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
 .hud {
