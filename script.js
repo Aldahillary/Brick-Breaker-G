@@ -23,6 +23,10 @@ let ball, paddle;
 let gameRunning = false;
 let score = 0;
 
+// Paddle movement
+let rightPressed = false;
+let leftPressed = false;
+
 // ===== SHOW SCREEN =====
 function showScreen(screen) {
   Object.values(screens).forEach((s) => s.classList.remove("active"));
@@ -45,10 +49,9 @@ function createLevels() {
   for (let i = 1; i <= totalLevels; i++) {
     const btn = document.createElement("button");
     btn.textContent = i;
-
-    if (i < currentLevel) btn.classList.add("level-cleared"); // green
-    else if (i === currentLevel) btn.classList.add("level-current"); // yellow
-    else btn.classList.add("level-locked"); // grey
+    if (i < currentLevel) btn.classList.add("level-cleared");
+    else if (i === currentLevel) btn.classList.add("level-current");
+    else btn.classList.add("level-locked");
 
     btn.disabled = i > currentLevel;
     btn.onclick = () => startGame(i);
@@ -56,31 +59,59 @@ function createLevels() {
   }
 }
 
-// ===== GAME SETUP =====
-function setupGame(level) {
-  bricks = [];
-  const rows = 3 + Math.min(level, 7);
-  const cols = 5 + Math.min(level, 10);
+// ===== PREDEFINED PATTERNS =====
+function generatePattern(level) {
+  // Different layouts for first 10 levels, repeat or random after
+  const rows = Math.min(3 + level, 8);
+  const cols = Math.min(5 + level, 12);
   const brickWidth = gameCanvas.width / cols - 5;
   const brickHeight = 20;
+  const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838", "#ff66cc"];
 
-  // Generate unique patterns for each level
+  bricks = [];
+
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      // Randomly skip bricks for variety
-      if (Math.random() > Math.min(level * 0.03, 0.7)) {
+      let addBrick = false;
+
+      // Patterns based on level number
+      switch (level % 5) {
+        case 1: // Full wall
+          addBrick = true;
+          break;
+        case 2: // Pyramid
+          if (c >= r && c < cols - r) addBrick = true;
+          break;
+        case 3: // Checkerboard
+          if ((r + c) % 2 === 0) addBrick = true;
+          break;
+        case 4: // Zigzag
+          if (r % 2 === c % 2) addBrick = true;
+          break;
+        case 0: // Random
+          addBrick = Math.random() > 0.3;
+          break;
+      }
+
+      if (addBrick) {
         bricks.push({
           x: c * (brickWidth + 5) + 5,
           y: r * (brickHeight + 5) + 40,
           w: brickWidth,
           h: brickHeight,
           broken: false,
+          color: colors[r % colors.length],
         });
       }
     }
   }
+}
 
-  paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 20, w: 80, h: 10 };
+// ===== GAME SETUP =====
+function setupGame(level) {
+  generatePattern(level);
+
+  paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 20, w: 80, h: 10, speed: 7 };
   ball = { x: gameCanvas.width / 2, y: gameCanvas.height - 40, r: 7, dx: 3, dy: -3 };
   playerLives = 3;
   score = 0;
@@ -91,7 +122,7 @@ function setupGame(level) {
 function drawBricks() {
   bricks.forEach((b) => {
     if (!b.broken) {
-      ctx.fillStyle = "#00e6ff";
+      ctx.fillStyle = b.color;
       ctx.fillRect(b.x, b.y, b.w, b.h);
     }
   });
@@ -137,22 +168,22 @@ function gameLoop() {
 
   // Paddle collision
   if (
-    ball.x + ball.r > paddle.x &&
-    ball.x - ball.r < paddle.x + paddle.w &&
+    ball.x > paddle.x &&
+    ball.x < paddle.x + paddle.w &&
     ball.y + ball.r > paddle.y &&
     ball.y - ball.r < paddle.y + paddle.h
   ) {
-    ball.dy *= -1;
+    ball.dy = -Math.abs(ball.dy);
   }
 
   // Brick collision
   bricks.forEach((b) => {
     if (!b.broken) {
       if (
-        ball.x + ball.r > b.x &&
-        ball.x - ball.r < b.x + b.w &&
-        ball.y + ball.r > b.y &&
-        ball.y - ball.r < b.y + b.h
+        ball.x > b.x &&
+        ball.x < b.x + b.w &&
+        ball.y - ball.r < b.y + b.h &&
+        ball.y + ball.r > b.y
       ) {
         b.broken = true;
         ball.dy *= -1;
@@ -164,11 +195,11 @@ function gameLoop() {
   // Lose life
   if (ball.y + ball.r > gameCanvas.height) {
     playerLives--;
+    showLifeLostPopup();
     if (playerLives <= 0) {
       showGameOver();
       return;
     } else {
-      showLifeLost();
       resetBall();
     }
   }
@@ -178,6 +209,13 @@ function gameLoop() {
     showLevelComplete();
     return;
   }
+
+  // Paddle arrow movement
+  if (rightPressed) paddle.x += paddle.speed;
+  if (leftPressed) paddle.x -= paddle.speed;
+
+  // Clamp paddle
+  paddle.x = Math.max(0, Math.min(gameCanvas.width - paddle.w, paddle.x));
 
   gameLoopId = requestAnimationFrame(gameLoop);
 }
@@ -190,20 +228,22 @@ function resetBall() {
   ball.dy = -3;
 }
 
-// ===== LIFE LOST MESSAGE =====
-function showLifeLost() {
-  const msg = document.createElement("div");
-  msg.className = "message-box show";
-  msg.textContent = "💔 Life Lost!";
-  document.body.appendChild(msg);
-  setTimeout(() => msg.remove(), 1000);
+// ===== LIFE LOST POPUP =====
+function showLifeLostPopup() {
+  const popup = document.createElement("div");
+  popup.className = "message-box show";
+  popup.textContent = "💔 Life Lost!";
+  popup.style.top = "40%";
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 800);
 }
 
 // ===== POPUPS =====
 function showGameOver() {
   gameRunning = false;
   const overlay = createOverlay("Game Over 💀", [
-    { text: "Replay", action: () => startGame(currentLevel) }
+    { text: "Replay", action: () => startGame(currentLevel) },
+    { text: "Main Menu", action: () => showScreen("menu") },
   ]);
   document.body.appendChild(overlay);
 }
@@ -211,12 +251,14 @@ function showGameOver() {
 function showLevelComplete() {
   gameRunning = false;
   const overlay = createOverlay("🎉 Level Cleared!", [
-    { text: "Next Level", action: () => startGame(currentLevel + 1) }
+    { text: "Next Level", action: () => startGame(currentLevel + 1) },
+    { text: "Main Menu", action: () => showScreen("menu") },
   ]);
   document.body.appendChild(overlay);
   launchFireworks();
 }
 
+// ===== OVERLAY CREATION =====
 function createOverlay(title, buttons) {
   const overlay = document.createElement("div");
   overlay.className = "overlay";
@@ -239,11 +281,10 @@ function createOverlay(title, buttons) {
   });
 
   overlay.appendChild(content);
-  document.body.appendChild(overlay);
   return overlay;
 }
 
-// ===== FIREWORKS EFFECT =====
+// ===== FIREWORKS =====
 function launchFireworks() {
   const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838"];
   for (let i = 0; i < 20; i++) {
@@ -278,18 +319,26 @@ function startGame(level) {
 }
 
 // ===== CONTROLS =====
-// Mouse
 gameCanvas.addEventListener("mousemove", (e) => {
   const rect = gameCanvas.getBoundingClientRect();
-  paddle.x = e.clientX - rect.left - paddle.w / 2;
+  const mouseX = e.clientX - rect.left;
+  paddle.x = mouseX - paddle.w / 2;
 });
-
-// Touch
 gameCanvas.addEventListener("touchmove", (e) => {
   e.preventDefault();
   const rect = gameCanvas.getBoundingClientRect();
-  paddle.x = e.touches[0].clientX - rect.left - paddle.w / 2;
+  const touchX = e.touches[0].clientX - rect.left;
+  paddle.x = touchX - paddle.w / 2;
 }, { passive: false });
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") rightPressed = true;
+  if (e.key === "ArrowLeft") leftPressed = true;
+});
+document.addEventListener("keyup", (e) => {
+  if (e.key === "ArrowRight") rightPressed = false;
+  if (e.key === "ArrowLeft") leftPressed = false;
+});
 
 // ===== INITIALIZE =====
 createLevels();
