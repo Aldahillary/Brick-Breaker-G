@@ -23,6 +23,31 @@ let ball, paddle;
 let gameRunning = false;
 let gameLoopId;
 let powerUps = [];
+let pointerX = null;
+
+// ===== RESPONSIVE CANVAS =====
+function resizeCanvas() {
+  const margin = 20; // padding from screen edges
+  const maxWidth = 480; // max canvas width
+  const width = Math.min(window.innerWidth - margin, maxWidth);
+  const height = width * 0.75; // 4:3 ratio, adjust if you want
+
+  gameCanvas.width = width;
+  gameCanvas.height = height;
+
+  // Reposition paddle and ball after resize
+  if (paddle) {
+    paddle.x = gameCanvas.width / 2 - paddle.w / 2;
+    paddle.y = gameCanvas.height - 20;
+  }
+  if (ball) {
+    ball.x = gameCanvas.width / 2;
+    ball.y = gameCanvas.height - 40;
+  }
+}
+
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
 // ===== SCREEN SWITCHING =====
 function showScreen(screen) {
@@ -147,11 +172,7 @@ function drawLives() {
 // ===== POWER-UPS =====
 function drawPowerUps() {
   powerUps.forEach((p) => {
-    ctx.fillStyle = {
-      life: "#fffa65",
-      paddle: "#32ff7e",
-      speed: "#ff3838"
-    }[p.type];
+    ctx.fillStyle = { life: "#fffa65", paddle: "#32ff7e", speed: "#ff3838" }[p.type];
     ctx.fillRect(p.x, p.y, p.w, p.h);
   });
 }
@@ -167,10 +188,7 @@ function updatePowerUps() {
     ) {
       if (p.type === "life") playerLives++;
       if (p.type === "paddle") paddle.w += 20;
-      if (p.type === "speed") {
-        ball.dx *= 1.2;
-        ball.dy *= 1.2;
-      }
+      if (p.type === "speed") { ball.dx *= 1.2; ball.dy *= 1.2; }
       powerUps.splice(i, 1);
     }
     if (p.y > gameCanvas.height) powerUps.splice(i, 1);
@@ -178,12 +196,10 @@ function updatePowerUps() {
 }
 
 // ===== GAME LOOP =====
-let pointerX = null;
-
 function gameLoop() {
   ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 
-  // Paddle update (mouse or touch)
+  // Paddle movement (mouse/touch)
   if (pointerX !== null) {
     let x = Math.max(paddle.w / 2, Math.min(gameCanvas.width - paddle.w / 2, pointerX));
     paddle.x = x - paddle.w / 2;
@@ -210,26 +226,18 @@ function gameLoop() {
     ball.x < paddle.x + paddle.w &&
     ball.y + ball.r > paddle.y &&
     ball.y + ball.r < paddle.y + paddle.h + 5
-  ) {
-    ball.dy *= -1;
-  }
+  ) { ball.dy *= -1; }
 
   // Brick collision
   bricks.forEach((b) => {
     if (!b.broken) {
       if (
-        ball.x > b.x &&
-        ball.x < b.x + b.w &&
-        ball.y - ball.r < b.y + b.h &&
-        ball.y + ball.r > b.y
+        ball.x > b.x && ball.x < b.x + b.w &&
+        ball.y - ball.r < b.y + b.h && ball.y + ball.r > b.y
       ) {
         b.hits--;
-        if (b.hits <= 0) {
-          b.broken = true;
-          maybeDropPowerUp(b);
-        } else {
-          b.color = getBrickColorByHits(b.hits);
-        }
+        if (b.hits <= 0) { b.broken = true; maybeDropPowerUp(b); }
+        else { b.color = getBrickColorByHits(b.hits); }
         ball.dy *= -1;
       }
     }
@@ -238,19 +246,12 @@ function gameLoop() {
   // Lose life
   if (ball.y + ball.r > gameCanvas.height) {
     playerLives--;
-    if (playerLives <= 0) {
-      showGameOver();
-      return;
-    } else {
-      resetBall();
-    }
+    if (playerLives <= 0) { showGameOver(); return; }
+    else { resetBall(); }
   }
 
   // Win level
-  if (bricks.every((b) => b.broken)) {
-    showLevelComplete();
-    return;
-  }
+  if (bricks.every((b) => b.broken)) { showLevelComplete(); return; }
 
   gameLoopId = requestAnimationFrame(gameLoop);
 }
@@ -281,10 +282,8 @@ function maybeDropPowerUp(brick) {
 function createOverlay(title, buttons) {
   const overlay = document.createElement("div");
   overlay.className = "overlay";
-
   const content = document.createElement("div");
   content.className = "overlay-content";
-
   const h2 = document.createElement("h2");
   h2.textContent = title;
   content.appendChild(h2);
@@ -292,10 +291,7 @@ function createOverlay(title, buttons) {
   buttons.forEach((b) => {
     const btn = document.createElement("button");
     btn.textContent = b.text;
-    btn.onclick = () => {
-      overlay.remove();
-      b.action();
-    };
+    btn.onclick = () => { overlay.remove(); b.action(); };
     content.appendChild(btn);
   });
 
@@ -373,10 +369,9 @@ gameCanvas.addEventListener("touchmove", (e) => {
   const rect = gameCanvas.getBoundingClientRect();
   pointerX = e.touches[0].clientX - rect.left;
 });
-gameCanvas.addEventListener("touchend", () => {
-  pointerX = null;
-});
+gameCanvas.addEventListener("touchend", () => { pointerX = null; });
 
 // ===== INITIALIZE =====
 createLevels();
 showScreen("menu");
+
