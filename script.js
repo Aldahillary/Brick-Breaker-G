@@ -353,6 +353,11 @@ function startGame(level) {
   gameLoop();
 }
 
+// ===== MOBILE TOUCH =====
+gameCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); touchX = e.touches[0].clientX; });
+gameCanvas.addEventListener("touchmove", (e) => { e.preventDefault(); touchX = e.touches[0].clientX; });
+gameCanvas.addEventListener("touchend", () => { touchX = null; });
+
 // ===== CONTROLS =====
 document.addEventListener("mousemove", (e) => {
   const rect = gameCanvas.getBoundingClientRect();
@@ -365,3 +370,4 @@ document.addEventListener("mousemove", (e) => {
 // ===== INITIALIZE =====
 createLevels();
 showScreen("menu");
+
