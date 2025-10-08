@@ -1,50 +1,43 @@
 <!-- Force GitHub Pages rebuild -->
 <!-- rebuild -->
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Neon Brick Breaker</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brick Breaker</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- START SCREEN -->
-  <div id="startScreen" class="screen">
-    <h1>Neon Brick Breaker</h1>
-    <button id="playBtn">Play Game</button>
-    <button id="levelBtn">Select Level</button>
+  <!-- ===== MENU SCREEN ===== -->
+  <div id="menu" class="screen active">
+    <h1 class="game-title">BRICK <span>BREAKER</span></h1>
+    <div class="menu-buttons">
+      <button id="playBtn">🎮 Play Game</button>
+      <button id="levelBtn">📜 Select Level</button>
+      <button id="soundBtn">🔊 Sound: On</button>
+    </div>
   </div>
 
-  <!-- LEVEL SELECT -->
-  <div id="levelScreen" class="screen hidden">
+  <!-- ===== LEVEL SELECT SCREEN ===== -->
+  <div id="levelSelect" class="screen">
     <h2>Select Level</h2>
-    <div id="levelGrid"></div>
-    <button id="backBtn">Back</button>
+    <div class="levels-grid"></div>
+    <button id="backToMenu" class="back-btn">⬅ Back to Menu</button>
   </div>
 
-  <!-- GAME SCREEN -->
-  <div id="gameScreen" class="screen hidden">
-    <div id="topBar">
-      <div id="livesContainer">❤️❤️❤️</div>
-      <div id="levelDisplay">Level 1</div>
-      <div id="scoreDisplay">Score: 0</div>
-    </div>
-    <canvas id="gameCanvas"></canvas>
-    <div id="lifePopup" class="hidden">💔</div>
-    <div id="endPopup" class="hidden">
-      <div id="endMessage"></div>
-      <button id="replayBtn">Replay</button>
-      <button id="menuBtn">Main Menu</button>
-    </div>
+  <!-- ===== GAME SCREEN ===== -->
+  <div id="gameScreen" class="screen">
+    <canvas id="gameCanvas" width="480" height="320"></canvas>
   </div>
 
+  <!-- Link JavaScript -->
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
