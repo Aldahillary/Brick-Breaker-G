@@ -1,3 +1,6 @@
+// ===== GAME VERSION =====
+const GAME_VERSION = "1.0";
+
 // ===== SCREEN MANAGEMENT =====
 const screens = {
   home: document.getElementById("homeScreen"),
@@ -6,7 +9,7 @@ const screens = {
   gameScreen: document.getElementById("gameScreen")
 };
 
-// ===== AUTH ELEMENTS =====
+// ===== BUTTONS & ELEMENTS =====
 const loginBtnHome = document.getElementById("loginBtnHome");
 const createBtnHome = document.getElementById("createBtnHome");
 const loginForm = document.getElementById("loginForm");
@@ -45,38 +48,52 @@ let gameLoopId;
 let powerUps = [];
 let pointerX = null;
 
-// ===== LOCAL STORAGE FUNCTIONS =====
-function getUsers(){ return JSON.parse(localStorage.getItem("users") || "{}"); }
-function saveUsers(users){ localStorage.setItem("users", JSON.stringify(users)); }
+// ===== LOCAL STORAGE HELPERS =====
+function getUsers() {
+    return JSON.parse(localStorage.getItem("users") || "{}");
+}
 
-// ===== SHOW SCREEN =====
-function showScreen(screen) {
-  Object.values(screens).forEach(s => s.classList.remove("active"));
-  screens[screen].classList.add("active");
-  cancelAnimationFrame(gameLoopId);
+function saveUsers(users) {
+    localStorage.setItem("users", JSON.stringify(users));
+}
+
+function saveProgress() {
+    if (!currentUser) return;
+    const users = getUsers();
+    users[currentUser].lastLevel = currentLevel;
+    saveUsers(users);
+    localStorage.setItem("lastUser", currentUser);
+}
+
+// ===== INITIALIZE USERS & VERSION =====
+if(localStorage.getItem("gameVersion") !== GAME_VERSION) {
+    localStorage.setItem("gameVersion", GAME_VERSION);
+    // No overwriting old user data, just register version
 }
 
 // ===== LOGIN / CREATE ACCOUNT =====
-loginBtnHome.addEventListener("click", () => {
+loginBtnHome.addEventListener("click", ()=>{
   loginForm.classList.remove("hidden");
   createForm.classList.add("hidden");
 });
-createBtnHome.addEventListener("click", () => {
+
+createBtnHome.addEventListener("click", ()=>{
   createForm.classList.remove("hidden");
   loginForm.classList.add("hidden");
 });
-loginBack.addEventListener("click", () => loginForm.classList.add("hidden"));
-createBack.addEventListener("click", () => createForm.classList.add("hidden"));
+
+loginBack.addEventListener("click", ()=>loginForm.classList.add("hidden"));
+createBack.addEventListener("click", ()=>createForm.classList.add("hidden"));
 
 // Create account
-createSubmit.addEventListener("click", () => {
+createSubmit.addEventListener("click", ()=>{
   const u = createUsername.value.trim();
   const p = createPassword.value.trim();
   createMsg.textContent = "";
-  if(!u || !p){ createMsg.textContent = "Enter username & password!"; return; }
+  if (!u || !p) { createMsg.textContent = "Enter username & password!"; return; }
   const users = getUsers();
-  if(users[u]){ createMsg.textContent = "Username exists!"; return; }
-  users[u] = {password: p, lastLevel: 1};
+  if (users[u]) { createMsg.textContent = "Username exists!"; return; }
+  users[u] = { password: p, lastLevel: 1 };
   saveUsers(users);
   createMsg.textContent = "Account created! Please log in.";
   createUsername.value = ""; createPassword.value = "";
@@ -85,136 +102,67 @@ createSubmit.addEventListener("click", () => {
 });
 
 // Login
-loginSubmit.addEventListener("click", () => {
+loginSubmit.addEventListener("click", ()=>{
   const u = loginUsername.value.trim();
   const p = loginPassword.value.trim();
   loginMsg.textContent = "";
-  if(!u || !p){ loginMsg.textContent = "Enter username & password!"; return; }
+  if (!u || !p) { loginMsg.textContent = "Enter username & password!"; return; }
   const users = getUsers();
-  if(!users[u] || users[u].password !== p){ loginMsg.textContent = "Invalid credentials!"; return; }
+  if (!users[u] || users[u].password !== p) { loginMsg.textContent = "Invalid credentials!"; return; }
   currentUser = u;
   currentLevel = users[u].lastLevel || 1;
-  localStorage.setItem("lastUser", u); // save for auto-login
   loginForm.classList.add("hidden");
   loginUsername.value = ""; loginPassword.value = "";
   showScreen("menu");
 });
 
-// Auto-login
+// Auto-login if user exists
 const lastUser = localStorage.getItem("lastUser");
-if(lastUser){
-  const users = getUsers();
-  if(users[lastUser]){
+if (lastUser && getUsers()[lastUser]) {
     currentUser = lastUser;
-    currentLevel = users[lastUser].lastLevel || 1;
+    currentLevel = getUsers()[lastUser].lastLevel || 1;
     showScreen("menu");
-  }
 }
 
 // Logout
-logoutBtn.addEventListener("click", () => {
-  localStorage.removeItem("lastUser");
-  currentUser = null;
-  showScreen("home");
+logoutBtn.addEventListener("click", ()=>{
+    currentUser = null;
+    localStorage.removeItem("lastUser");
+    showScreen("home");
 });
 
-// Save progress
-function saveProgress(){
-  if(!currentUser) return;
-  const users = getUsers();
-  users[currentUser].lastLevel = currentLevel;
-  saveUsers(users);
-  localStorage.setItem("lastUser", currentUser);
+// ===== SCREEN MANAGEMENT =====
+function showScreen(screen) {
+  Object.values(screens).forEach(s => s.classList.remove("active"));
+  screens[screen].classList.add("active");
+  cancelAnimationFrame(gameLoopId);
 }
 
 // ===== MAIN MENU BUTTONS =====
 playBtn.onclick = () => startGame(currentLevel);
 levelBtn.onclick = () => showScreen("levelSelect");
 soundBtn.onclick = () => {
-  soundOn = !soundOn;
-  soundBtn.textContent = `Sound: ${soundOn ? "On 🔊" : "Off 🔇"}`;
+    soundOn = !soundOn;
+    soundBtn.textContent = `Sound: ${soundOn ? "On 🔊" : "Off 🔇"}`;
 };
 backToMenu.onclick = () => showScreen("menu");
 
 // ===== LEVEL GRID =====
-function createLevels(){
-  levelGrid.innerHTML = "";
-  for(let i=1;i<=totalLevels;i++){
-    const btn = document.createElement("button");
-    btn.textContent = i;
-    if(i<currentLevel) btn.classList.add("level-cleared");
-    else if(i===currentLevel) btn.classList.add("level-current");
-    else btn.classList.add("level-locked");
-    btn.disabled = i>currentLevel;
-    btn.onclick = ()=> startGame(i);
-    levelGrid.appendChild(btn);
-  }
+function createLevels() {
+    levelGrid.innerHTML = "";
+    for(let i=1;i<=totalLevels;i++){
+        const btn=document.createElement("button");
+        btn.textContent=i;
+        if(i<currentLevel) btn.classList.add("level-cleared");
+        else if(i===currentLevel) btn.classList.add("level-current");
+        else btn.classList.add("level-locked");
+        btn.disabled=i>currentLevel;
+        btn.onclick=()=> startGame(i);
+        levelGrid.appendChild(btn);
+    }
 }
 
 // ===== GAME LOGIC =====
-function setupGame(level){
-  bricks = [];
-  const pattern = generatePattern(level);
-  const rows = pattern.length;
-  const cols = pattern[0].length;
-  const brickWidth = gameCanvas.width / cols - 5;
-  const brickHeight = 20;
+// Use your original game setup, draw, and loop functions here
+// Make sure every time a level is completed, call saveProgress()
 
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      if(pattern[r][c] === 1){
-        const maxHits = Math.min(3, Math.floor(level/3)+1);
-        bricks.push({
-          x: c*(brickWidth+5)+5,
-          y: r*(brickHeight+5)+40,
-          w: brickWidth,
-          h: brickHeight,
-          broken: false,
-          hits: maxHits,
-          color: getBrickColorByHits(maxHits)
-        });
-      }
-    }
-  }
-
-  paddle = { x: gameCanvas.width/2 - 40, y: gameCanvas.height-20, w: 80, h: 10 };
-  ball = { x: gameCanvas.width/2, y: gameCanvas.height-40, r: 7, dx: 3, dy: -3 };
-  playerLives = 3;
-  powerUps = [];
-  gameRunning = true;
-}
-
-// ===== ADDITIONAL GAME FUNCTIONS =====
-// drawBricks, drawPaddle, drawBall, drawLives, drawPowerUps, updatePowerUps, gameLoop, resetBall, maybeDropPowerUp, createOverlay, showGameOver, showLevelComplete, launchFireworks
-// (Use the exact same functions from your original game here, unchanged.)
-
-// ===== START GAME =====
-function startGame(level){
-  currentLevel = level;
-  createLevels();
-  setupGame(level);
-  showScreen("gameScreen");
-  resetBall();
-  gameLoop();
-}
-
-// ===== POINTER EVENTS =====
-gameCanvas.addEventListener("mousemove", e=>{
-  const rect = gameCanvas.getBoundingClientRect();
-  pointerX = e.clientX - rect.left;
-});
-gameCanvas.addEventListener("touchstart", e=>{
-  e.preventDefault();
-  const rect = gameCanvas.getBoundingClientRect();
-  pointerX = e.touches[0].clientX - rect.left;
-});
-gameCanvas.addEventListener("touchmove", e=>{
-  e.preventDefault();
-  const rect = gameCanvas.getBoundingClientRect();
-  pointerX = e.touches[0].clientX - rect.left;
-});
-gameCanvas.addEventListener("touchend", ()=>{ pointerX = null; });
-
-// ===== INITIALIZE =====
-createLevels();
-showScreen(currentUser ? "menu" : "home");
