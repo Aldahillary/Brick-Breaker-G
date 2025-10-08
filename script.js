@@ -1,308 +1,249 @@
-// ===== SCREEN MANAGEMENT =====
-const screens = {
-  menu: document.getElementById("menu"),
-  levelSelect: document.getElementById("levelSelect"),
-  gameScreen: document.getElementById("gameScreen"),
-};
+const startScreen = document.getElementById('startScreen');
+const levelScreen = document.getElementById('levelScreen');
+const gameScreen = document.getElementById('gameScreen');
+const playBtn = document.getElementById('playBtn');
+const levelBtn = document.getElementById('levelBtn');
+const backBtn = document.getElementById('backBtn');
+const exitBtn = document.getElementById('exitBtn');
+const levelGrid = document.getElementById('levelGrid');
 
-const playBtn = document.getElementById("playBtn");
-const levelBtn = document.getElementById("levelBtn");
-const soundBtn = document.getElementById("soundBtn");
-const backToMenu = document.getElementById("backToMenu");
-const levelGrid = document.querySelector(".levels-grid");
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-const gameCanvas = document.getElementById("gameCanvas");
-const ctx = gameCanvas.getContext("2d");
+const levelDisplay = document.getElementById('levelDisplay');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const livesDisplay = document.getElementById('livesDisplay');
 
-let soundOn = true;
 let currentLevel = 1;
-let totalLevels = 100;
-let playerLives = 3;
 let score = 0;
-let bricks = [];
-let ball, paddle;
-let gameRunning = false;
-let lifeLostTimeout;
-let ballSpeed = 3;
+let lives = 3;
+let paddle, ball, bricks, brickRowCount, brickColumnCount;
+let rightPressed = false;
+let leftPressed = false;
 
-// ===== SHOW SCREEN =====
-function showScreen(screen) {
-  Object.values(screens).forEach(s => s.classList.remove("active"));
-  screens[screen].classList.add("active");
-  cancelAnimationFrame(gameLoopId);
+// Load saved level
+if (localStorage.getItem('brickGameLevel')) {
+  currentLevel = parseInt(localStorage.getItem('brickGameLevel'));
 }
 
-// ===== MENU BUTTONS =====
-playBtn.onclick = () => startGame(currentLevel);
-levelBtn.onclick = () => showScreen("levelSelect");
-soundBtn.onclick = () => {
-  soundOn = !soundOn;
-  soundBtn.textContent = `Sound: ${soundOn ? "On 🔊" : "Off 🔇"}`;
-};
-backToMenu.onclick = () => showScreen("menu");
+// ---------------- Start/Level Screen ----------------
+playBtn.addEventListener('click', () => {
+  startScreen.classList.add('hidden');
+  initLevel(currentLevel);
+  gameScreen.classList.remove('hidden');
+});
 
-// ===== LEVEL GRID =====
-function createLevels() {
-  levelGrid.innerHTML = "";
-  for (let i = 1; i <= totalLevels; i++) {
-    const btn = document.createElement("button");
-    btn.textContent = i;
-    if (i < currentLevel) btn.classList.add("level-cleared");
-    else if (i === currentLevel) btn.classList.add("level-current");
-    else btn.classList.add("level-locked");
+levelBtn.addEventListener('click', () => {
+  startScreen.classList.add('hidden');
+  showLevels();
+  levelScreen.classList.remove('hidden');
+});
 
-    btn.disabled = i > currentLevel;
-    btn.onclick = () => startGame(i);
-    levelGrid.appendChild(btn);
-  }
-}
+backBtn.addEventListener('click', () => {
+  levelScreen.classList.add('hidden');
+  startScreen.classList.remove('hidden');
+});
 
-// ===== GAME SETUP =====
-function setupGame(level) {
-  bricks = [];
-  const rows = 3 + Math.min(level, 7);
-  const cols = 5 + Math.min(level, 10);
-  const brickWidth = gameCanvas.width / cols - 5;
-  const brickHeight = 20;
+exitBtn.addEventListener('click', () => {
+  gameScreen.classList.add('hidden');
+  startScreen.classList.remove('hidden');
+  saveProgress();
+});
 
-  // Different color per level
-  const colors = ["#ff3838", "#32ff7e", "#fffa65", "#00e6ff", "#ff8c00"];
+// ---------------- Level Select ----------------
+function showLevels() {
+  levelGrid.innerHTML = '';
+  for (let i = 1; i <= 100; i++) {
+    const tile = document.createElement('div');
+    tile.classList.add('levelTile');
 
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      // Skip random bricks for pattern
-      if (Math.random() > Math.min(level * 0.03, 0.7)) {
-        bricks.push({
-          x: c * (brickWidth + 5) + 5,
-          y: r * (brickHeight + 5) + 40,
-          w: brickWidth,
-          h: brickHeight,
-          broken: false,
-          color: colors[(r + c) % colors.length]
-        });
+    let playedLevel = parseInt(localStorage.getItem('brickGameLevel') || '0');
+
+    if (i < playedLevel) tile.style.background = 'green';
+    else if (i === playedLevel) tile.style.background = 'yellow';
+    else tile.style.background = 'gray';
+
+    tile.textContent = i;
+    tile.addEventListener('click', () => {
+      if (i <= playedLevel + 1) {
+        currentLevel = i;
+        levelScreen.classList.add('hidden');
+        initLevel(currentLevel);
+        gameScreen.classList.remove('hidden');
       }
+    });
+    levelGrid.appendChild(tile);
+  }
+}
+
+// ---------------- Game Mechanics ----------------
+function initLevel(level) {
+  levelDisplay.textContent = `Level: ${level}`;
+  scoreDisplay.textContent = `Score: ${score}`;
+  livesDisplay.textContent = `Lives: ${'❤️'.repeat(lives)}`;
+
+  paddle = {
+    height: 15,
+    width: 100,
+    x: canvas.width/2 - 50,
+    speed: 8
+  };
+
+  ball = {
+    x: canvas.width/2,
+    y: canvas.height - 50,
+    radius: 10,
+    dx: 4,
+    dy: -4
+  };
+
+  // Level-based brick setup
+  brickRowCount = Math.min(5 + Math.floor(level/20), 10);
+  brickColumnCount = Math.min(7 + Math.floor(level/15), 14);
+  bricks = [];
+  for (let r = 0; r < brickRowCount; r++) {
+    bricks[r] = [];
+    for (let c = 0; c < brickColumnCount; c++) {
+      bricks[r][c] = { x: 0, y: 0, status: 1, color: `hsl(${(level*10 + r*20 + c*10)%360},70%,50%)` };
     }
   }
 
-  paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 30, w: 80, h: 10, dx: 0 };
-  ball = { x: gameCanvas.width / 2, y: gameCanvas.height - 50, r: 7, dx: ballSpeed, dy: -ballSpeed };
-  playerLives = 3;
-  score = 0;
-  gameRunning = true;
+  document.addEventListener('keydown', keyDownHandler);
+  document.addEventListener('keyup', keyUpHandler);
+  document.addEventListener('mousemove', mouseMoveHandler);
+
+  requestAnimationFrame(draw);
 }
 
-// ===== DRAW ELEMENTS =====
-function drawBricks() {
-  bricks.forEach(b => {
-    if (!b.broken) {
-      ctx.fillStyle = b.color;
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-    }
-  });
+function keyDownHandler(e) {
+  if(e.key === 'Right' || e.key === 'ArrowRight') rightPressed = true;
+  else if(e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = true;
 }
 
+function keyUpHandler(e) {
+  if(e.key === 'Right' || e.key === 'ArrowRight') rightPressed = false;
+  else if(e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = false;
+}
+
+function mouseMoveHandler(e) {
+  let relativeX = e.clientX - canvas.offsetLeft;
+  if(relativeX > 0 && relativeX < canvas.width) paddle.x = relativeX - paddle.width/2;
+}
+
+// ---------------- Draw Functions ----------------
 function drawPaddle() {
-  ctx.fillStyle = "#00ffff";
-  ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(paddle.x, canvas.height - paddle.height - 10, paddle.width, paddle.height);
 }
 
 function drawBall() {
   ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-  ctx.fillStyle = "#fff";
+  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+  ctx.fillStyle = 'white';
   ctx.fill();
   ctx.closePath();
 }
 
-function drawHUD() {
-  ctx.font = "16px Poppins";
-  ctx.fillStyle = "#fff";
-  ctx.fillText(`Lives: ${playerLives}`, 10, 20);
-  ctx.fillText(`Level: ${currentLevel}`, gameCanvas.width / 2 - 30, 20);
-  ctx.fillText(`Score: ${score}`, gameCanvas.width - 90, 20);
+function drawBricks() {
+  const brickWidth = (canvas.width - brickColumnCount*10) / brickColumnCount;
+  const brickHeight = 20;
+  for (let r = 0; r < brickRowCount; r++) {
+    for (let c = 0; c < brickColumnCount; c++) {
+      if (bricks[r][c].status === 1) {
+        let brickX = c*(brickWidth+10) + 5;
+        let brickY = r*(brickHeight+10) + 50;
+        bricks[r][c].x = brickX;
+        bricks[r][c].y = brickY;
+        ctx.fillStyle = bricks[r][c].color;
+        ctx.fillRect(brickX, brickY, brickWidth, brickHeight);
+      }
+    }
+  }
 }
 
-// ===== GAME LOOP =====
-let gameLoopId;
-function gameLoop() {
-  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+// ---------------- Collision ----------------
+function collisionDetection() {
+  for (let r = 0; r < brickRowCount; r++) {
+    for (let c = 0; c < brickColumnCount; c++) {
+      let b = bricks[r][c];
+      if(b.status === 1) {
+        if(ball.x > b.x && ball.x < b.x + (canvas.width - brickColumnCount*10)/brickColumnCount &&
+           ball.y > b.y && ball.y < b.y + 20) {
+          ball.dy = -ball.dy;
+          b.status = 0;
+          score += 10;
+          scoreDisplay.textContent = `Score: ${score}`;
+          if(isLevelCleared()) nextLevel();
+        }
+      }
+    }
+  }
+}
+
+function isLevelCleared() {
+  for (let r = 0; r < brickRowCount; r++) {
+    for (let c = 0; c < brickColumnCount; c++) {
+      if (bricks[r][c].status === 1) return false;
+    }
+  }
+  return true;
+}
+
+function nextLevel() {
+  currentLevel++;
+  localStorage.setItem('brickGameLevel', currentLevel);
+  initLevel(currentLevel);
+}
+
+// ---------------- Game Loop ----------------
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBricks();
-  drawPaddle();
   drawBall();
-  drawHUD();
+  drawPaddle();
+  collisionDetection();
 
   // Ball movement
   ball.x += ball.dx;
   ball.y += ball.dy;
 
-  // Bounce walls
-  if (ball.x + ball.r > gameCanvas.width || ball.x - ball.r < 0) ball.dx *= -1;
-  if (ball.y - ball.r < 0) ball.dy *= -1;
-
-  // Paddle collision
-  if (ball.x > paddle.x && ball.x < paddle.x + paddle.w && ball.y + ball.r > paddle.y && ball.y - ball.r < paddle.y + paddle.h) {
-    ball.dy *= -1;
-  }
-
-  // Brick collision
-  bricks.forEach(b => {
-    if (!b.broken && ball.x > b.x && ball.x < b.x + b.w && ball.y - ball.r < b.y + b.h && ball.y + ball.r > b.y) {
-      b.broken = true;
-      ball.dy *= -1;
-      score += 10;
-    }
-  });
-
-  // Lose life
-  if (ball.y + ball.r > gameCanvas.height) {
-    playerLives--;
-    showLifeLost();
-    if (playerLives <= 0) {
-      showGameOver();
-      return;
-    } else {
-      resetBall();
-    }
-  }
-
-  // Win level
-  if (bricks.every(b => b.broken)) {
-    showLevelComplete();
-    return;
+  // Wall collision
+  if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) ball.dx = -ball.dx;
+  if(ball.y + ball.dy < ball.radius) ball.dy = -ball.dy;
+  else if(ball.y + ball.dy > canvas.height - ball.radius - paddle.height - 10) {
+    if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) ball.dy = -ball.dy;
+    else loseLife();
   }
 
   // Paddle movement
-  paddle.x += paddle.dx;
-  if (paddle.x < 0) paddle.x = 0;
-  if (paddle.x + paddle.w > gameCanvas.width) paddle.x = gameCanvas.width - paddle.w;
+  if(rightPressed && paddle.x < canvas.width - paddle.width) paddle.x += paddle.speed;
+  if(leftPressed && paddle.x > 0) paddle.x -= paddle.speed;
 
-  gameLoopId = requestAnimationFrame(gameLoop);
+  requestAnimationFrame(draw);
 }
 
-// ===== RESET BALL =====
-function resetBall() {
-  ball.x = gameCanvas.width / 2;
-  ball.y = gameCanvas.height - 50;
-  ball.dx = ballSpeed * (Math.random() > 0.5 ? 1 : -1);
-  ball.dy = -ballSpeed;
-}
-
-// ===== LIFE LOST POPUP =====
-function showLifeLost() {
-  clearTimeout(lifeLostTimeout);
-  let box = document.querySelector(".message-box");
-  if (!box) {
-    box = document.createElement("div");
-    box.className = "message-box";
-    document.body.appendChild(box);
-  }
-  box.textContent = "💔 Life Lost!";
-  box.classList.add("show");
-  lifeLostTimeout = setTimeout(() => box.classList.remove("show"), 1000);
-}
-
-// ===== POPUPS =====
-function createOverlay(title, buttons) {
-  const overlay = document.createElement("div");
-  overlay.className = "overlay";
-  
-  const content = document.createElement("div");
-  content.className = "overlay-content";
-  
-  const heading = document.createElement("h2");
-  heading.textContent = title;
-  content.appendChild(heading);
-  
-  buttons.forEach(b => {
-    const btn = document.createElement("button");
-    btn.textContent = b.text;
-    btn.onclick = () => {
-      overlay.remove();
-      b.action();
-    };
-    content.appendChild(btn);
-  });
-
-  overlay.appendChild(content);
-  document.body.appendChild(overlay);
-}
-
-function showGameOver() {
-  gameRunning = false;
-  createOverlay("Game Over 💀", [
-    { text: "Replay", action: () => startGame(currentLevel) },
-    { text: "Main Menu", action: () => showScreen("menu") },
-  ]);
-}
-
-function showLevelComplete() {
-  gameRunning = false;
-  createOverlay("🎉 Level Cleared!", [
-    { text: "Next Level", action: () => startGame(currentLevel + 1) },
-    { text: "Main Menu", action: () => showScreen("menu") },
-  ]);
-  launchFireworks();
-}
-
-// ===== FIREWORKS =====
-function launchFireworks() {
-  const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838"];
-  for (let i = 0; i < 20; i++) {
-    const particle = document.createElement("div");
-    particle.style.position = "absolute";
-    particle.style.width = "6px";
-    particle.style.height = "6px";
-    particle.style.borderRadius = "50%";
-    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-    particle.style.top = "50%";
-    particle.style.left = "50%";
-    particle.style.transition = "all 1s ease-out";
-    document.body.appendChild(particle);
-
-    setTimeout(() => {
-      particle.style.transform = `translate(${(Math.random()-0.5)*500}px, ${(Math.random()-0.5)*500}px)`;
-      particle.style.opacity = "0";
-    }, 50);
-
-    setTimeout(() => particle.remove(), 1200);
+// ---------------- Life ----------------
+function loseLife() {
+  lives--;
+  livesDisplay.textContent = `Lives: ${'❤️'.repeat(lives)}`;
+  if(lives === 0) {
+    alert('Game Over!');
+    lives = 3;
+    score = 0;
+    currentLevel = 1;
+    localStorage.setItem('brickGameLevel', currentLevel);
+    gameScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+  } else {
+    ball.x = canvas.width/2;
+    ball.y = canvas.height - 50;
+    ball.dx = 4;
+    ball.dy = -4;
+    paddle.x = canvas.width/2 - paddle.width/2;
   }
 }
 
-// ===== START GAME =====
-function startGame(level) {
-  currentLevel = level;
-  createLevels();
-  setupGame(level);
-  showScreen("gameScreen");
-  resetBall();
-  gameLoop();
+// ---------------- Save Progress ----------------
+function saveProgress() {
+  localStorage.setItem('brickGameLevel', currentLevel);
 }
-
-// ===== CONTROLS =====
-// Mouse for desktop
-gameCanvas.addEventListener("mousemove", e => {
-  const rect = gameCanvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  paddle.x = mouseX - paddle.w / 2;
-});
-
-// Touch for mobile
-gameCanvas.addEventListener("touchmove", e => {
-  const rect = gameCanvas.getBoundingClientRect();
-  const touchX = e.touches[0].clientX - rect.left;
-  paddle.x = touchX - paddle.w / 2;
-  e.preventDefault();
-}, { passive: false });
-
-// Arrow keys
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowLeft") paddle.dx = -6;
-  if (e.key === "ArrowRight") paddle.dx = 6;
-});
-document.addEventListener("keyup", e => {
-  if (e.key === "ArrowLeft" || e.key === "ArrowRight") paddle.dx = 0;
-});
-
-// ===== INITIALIZE =====
-createLevels();
-showScreen("menu");
