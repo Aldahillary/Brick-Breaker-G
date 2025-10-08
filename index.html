@@ -11,52 +11,47 @@
 </head>
 <body>
 
-<!-- ===== HOME / LOGIN SCREEN ===== -->
+<!-- ===== HOME SCREEN ===== -->
 <div id="homeScreen" class="screen active">
-  <div class="background-bricks"></div>
-  <div class="login-container">
-    <h1>Brick Breaker</h1>
-    <div class="home-buttons">
-      <button id="loginBtnHome" class="main-btn">Login</button>
-      <button id="createBtnHome" class="main-btn">Create Account</button>
-    </div>
+  <h1>Brick Breaker</h1>
+  <div class="auth-buttons">
+    <button id="loginBtnHome">Login</button>
+    <button id="createBtnHome">Create Account</button>
+  </div>
 
-    <!-- Login Form -->
-    <div id="loginForm" class="auth-form hidden">
-      <h2>Login</h2>
-      <input id="loginUsername" type="text" placeholder="Username">
-      <input id="loginPassword" type="password" placeholder="Password">
-      <button id="loginSubmit" class="main-btn">Login</button>
-      <button id="loginBack" class="back-btn">Back</button>
-      <p id="loginMsg" class="msg"></p>
-    </div>
+  <div id="loginForm" class="auth-form">
+    <h3>Login</h3>
+    <input type="text" id="loginUsername" placeholder="Username">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button id="loginSubmit">Login</button>
+    <button id="loginBack">Back</button>
+    <div id="loginMsg" class="msg"></div>
+  </div>
 
-    <!-- Create Account Form -->
-    <div id="createForm" class="auth-form hidden">
-      <h2>Create Account</h2>
-      <input id="createUsername" type="text" placeholder="Username">
-      <input id="createPassword" type="password" placeholder="Password">
-      <button id="createSubmit" class="main-btn">Create</button>
-      <button id="createBack" class="back-btn">Back</button>
-      <p id="createMsg" class="msg"></p>
-    </div>
+  <div id="createForm" class="auth-form">
+    <h3>Create Account</h3>
+    <input type="text" id="createUsername" placeholder="Username">
+    <input type="password" id="createPassword" placeholder="Password">
+    <button id="createSubmit">Create</button>
+    <button id="createBack">Back</button>
+    <div id="createMsg" class="msg"></div>
   </div>
 </div>
 
-<!-- ===== MAIN MENU ===== -->
+<!-- ===== MENU SCREEN ===== -->
 <div id="menu" class="screen">
   <h2>Main Menu</h2>
-  <button id="playBtn" class="main-btn">Play Game</button>
-  <button id="levelBtn" class="main-btn">Select Level</button>
-  <button id="soundBtn" class="main-btn">Sound: On 🔊</button>
-  <button id="logoutBtn" class="main-btn">Logout</button>
+  <button id="playBtn">Play</button>
+  <button id="levelBtn">Levels</button>
+  <button id="soundBtn">Sound: On 🔊</button>
+  <button id="logoutBtn">Logout</button>
 </div>
 
-<!-- ===== LEVEL SELECT ===== -->
+<!-- ===== LEVEL SELECT SCREEN ===== -->
 <div id="levelSelect" class="screen">
   <h2>Select Level</h2>
   <div class="levels-grid"></div>
-  <button id="backToMenu" class="back-btn">Back</button>
+  <button id="backToMenu">Back to Menu</button>
 </div>
 
 <!-- ===== GAME SCREEN ===== -->
@@ -64,9 +59,10 @@
   <canvas id="gameCanvas"></canvas>
 </div>
 
-<script src="script.js"></script>
+<script src="game.js"></script>
 </body>
 </html>
+
 
 
 
