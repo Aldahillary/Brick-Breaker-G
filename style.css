@@ -1,248 +1,73 @@
-/* ===== GENERAL STYLES ===== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
-}
-
 body {
-  background: linear-gradient(135deg, #1b0034, #003973);
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111;
   color: #fff;
-  height: 100vh;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-.hidden {
-  display: none !important;
-}
-
-/* ===== SCREEN CONTAINERS ===== */
+/* General Screens */
 .screen {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
   display: none;
-  flex-direction: column;
-  align-items: center;
+  width: 100vw;
+  height: 100vh;
   justify-content: center;
-  text-align: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 .screen.active {
   display: flex;
-  animation: fadeIn 0.5s ease-in-out;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
+/* ===== LOGIN SCREEN ===== */
+#loginScreen {
+  background: url('bricks-background.jpg') no-repeat center center/cover;
 }
 
-/* ===== MAIN MENU ===== */
-.game-title {
-  font-size: 3rem;
-  color: #00e6ff;
-  text-shadow: 0 0 10px #00e6ff, 0 0 20px #00e6ff;
-  margin-bottom: 40px;
-  animation: glow 2s infinite alternate;
+.login-container {
+  background: rgba(0,0,0,0.6);
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
 }
 
-@keyframes glow {
-  from { text-shadow: 0 0 10px #00e6ff; }
-  to { text-shadow: 0 0 25px #00ffff, 0 0 45px #00e6ff; }
-}
-
-.menu-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.menu-buttons button {
-  padding: 14px 28px;
-  font-size: 1.2rem;
-  border: none;
-  border-radius: 12px;
-  background: rgba(0, 230, 255, 0.15);
-  color: #fff;
-  cursor: pointer;
-  box-shadow: 0 0 10px #00e6ff;
-  transition: 0.3s ease;
-}
-
-.menu-buttons button:hover {
-  background: #00e6ff;
-  color: #0b002b;
-  box-shadow: 0 0 20px #00e6ff, 0 0 40px #00ffff;
-}
-
-/* ===== LEVEL SELECT ===== */
-#levelSelect h2 {
-  font-size: 2rem;
-  margin-bottom: 20px;
-  color: #00e6ff;
-  text-shadow: 0 0 10px #00e6ff;
-}
-
-.levels-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, 50px);
-  gap: 10px;
-  justify-content: center;
-  width: 90%;
-  max-width: 500px;
-  margin-bottom: 20px;
-  overflow-y: auto;
-  max-height: 60vh;
+.login-container input {
   padding: 10px;
+  width: 200px;
+  margin-bottom: 10px;
+}
+
+.login-container button {
+  padding: 10px 20px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+/* ===== MENU ===== */
+#menu button, #levelSelect button {
+  padding: 10px 20px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+/* ===== LEVEL GRID ===== */
+.levels-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
 }
 
 .levels-grid button {
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.3s;
+  padding: 8px;
+  width: 40px;
 }
 
-.level-cleared {
-  background: #32ff7e;
-  color: #0b002b;
-}
-
-.level-current {
-  background: #fffa65;
-  color: #0b002b;
-}
-
-.level-locked {
-  background: #555;
-  color: #ccc;
-}
-
-#backToMenu {
-  margin-top: 20px;
-  padding: 10px 20px;
-  background: #00e6ff;
-  border: none;
-  border-radius: 10px;
-  color: #0b002b;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 0 10px #00e6ff;
-}
-
-#backToMenu:hover {
-  background: #00ffff;
-}
-
-/* ===== GAME SCREEN ===== */
+/* ===== GAME CANVAS ===== */
 #gameCanvas {
-  border: 2px solid #00e6ff;
-  background: radial-gradient(circle at top, #001a33, #000);
-  border-radius: 10px;
-  box-shadow: 0 0 20px #00e6ff;
-}
-
-.hud {
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  font-size: 1rem;
-  color: #fff;
-}
-
-.menu-back {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  padding: 8px 16px;
-  background: rgba(0, 230, 255, 0.2);
-  border: none;
-  border-radius: 8px;
-  color: #fff;
-  cursor: pointer;
-  font-size: 1rem;
-  box-shadow: 0 0 10px #00e6ff;
-  transition: 0.3s;
-}
-
-.menu-back:hover {
-  background: #00e6ff;
-  color: #000;
-}
-
-/* ===== POPUP MESSAGES ===== */
-.message-box {
-  position: absolute;
-  bottom: 20px;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 10px 20px;
-  border-radius: 10px;
-  color: #fff;
-  font-size: 1rem;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.message-box.show {
-  opacity: 1;
-}
-
-/* ===== OVERLAY (Game Over / Level Complete) ===== */
-.overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.overlay.hidden {
-  display: none;
-}
-
-.overlay-content {
-  background: rgba(0, 0, 40, 0.8);
-  border: 2px solid #00e6ff;
-  border-radius: 12px;
-  padding: 30px 40px;
-  text-align: center;
-  box-shadow: 0 0 20px #00e6ff;
-}
-
-.overlay-content h2 {
-  color: #00e6ff;
-  margin-bottom: 20px;
-}
-
-.overlay-content button {
+  background: #000;
+  border: 2px solid #fff;
   display: block;
-  margin: 10px auto;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 10px;
-  background: #00e6ff;
-  color: #0b002b;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 0 10px #00e6ff;
-  transition: 0.3s;
-}
-
-.overlay-content button:hover {
-  background: #00ffff;
-  box-shadow: 0 0 20px #00ffff, 0 0 40px #00e6ff;
+  margin: 0 auto;
 }
