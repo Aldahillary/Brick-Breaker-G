@@ -1,145 +1,42 @@
 /* ===== GENERAL ===== */
-body {
-  margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #1b0034, #003973); /* colorful gradient */
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+body { background: linear-gradient(135deg, #1b0034, #003973); color: #fff; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 
 /* ===== SCREENS ===== */
-.screen {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 480px;
-  text-align: center;
-}
-.screen.active {
-  display: flex;
-}
+.screen { position: absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction: column; align-items:center; justify-content:center; text-align:center; }
+.screen.active { display:flex; animation: fadeIn 0.5s ease-in-out; }
+@keyframes fadeIn { from {opacity:0; transform:scale(0.97);} to {opacity:1; transform:scale(1);} }
 
 /* ===== MENU ===== */
-.game-title {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-  color: #00e6ff;
-  text-shadow: 0 0 10px #00e6ff, 0 0 20px #fffa65;
-  animation: glow 2s infinite alternate;
-}
-@keyframes glow {
-  from { text-shadow: 0 0 10px #00e6ff; }
-  to { text-shadow: 0 0 25px #fffa65, 0 0 45px #32ff7e; }
-}
-.menu-buttons button {
-  margin: 10px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  cursor: pointer;
-  border: none;
-  border-radius: 8px;
-  background: #00e6ff;
-  color: #000;
-  transition: 0.2s;
-}
-.menu-buttons button:hover {
-  background: #32ff7e;
-}
+.game-title { font-size:3rem; color:#00e6ff; text-shadow:0 0 10px #00e6ff; margin-bottom:40px; animation: glow 2s infinite alternate; }
+@keyframes glow { from {text-shadow:0 0 10px #00e6ff;} to {text-shadow:0 0 25px #00ffff,0 0 45px #00e6ff;} }
+.menu-buttons { display:flex; flex-direction:column; gap:20px; }
+.menu-buttons button { padding:14px 28px; font-size:1.2rem; border:none; border-radius:12px; background: rgba(0,230,255,0.15); color:#fff; cursor:pointer; box-shadow:0 0 10px #00e6ff; transition:0.3s; }
+.menu-buttons button:hover { background:#00e6ff; color:#0b002b; box-shadow:0 0 20px #00e6ff,0 0 40px #00ffff; }
 
-/* ===== LEVEL GRID ===== */
-.levels-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  width: 100%;
-  max-height: 300px;
-  overflow-y: auto;
-  margin-bottom: 15px;
-  padding: 5px;
-}
-.levels-grid button {
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
-.level-cleared { background: #32ff7e; color: #000; }
-.level-current { background: #fffa65; color: #000; }
-.level-locked { background: #555; color: #ccc; }
-.back-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background: #ff3838;
-  color: #fff;
-}
+/* ===== LEVEL SELECT ===== */
+#levelSelect h2 { font-size:2rem; margin-bottom:20px; color:#00e6ff; text-shadow:0 0 10px #00e6ff; }
+.levels-grid { display:grid; grid-template-columns:repeat(auto-fill,50px); gap:10px; justify-content:center; width:90%; max-width:500px; margin-bottom:20px; overflow-y:auto; max-height:60vh; padding:10px; }
+.levels-grid button { border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.3s; }
+.levels-grid button.level-cleared { background:#32ff7e; color:#0b002b; }
+.levels-grid button.level-current { background:#fffa65; color:#0b002b; }
+.levels-grid button.level-locked { background:#555; color:#ccc; }
+#backToMenu { margin-top:20px; padding:10px 20px; background:#00e6ff; border:none; border-radius:10px; color:#0b002b; font-weight:bold; cursor:pointer; box-shadow:0 0 10px #00e6ff; }
+#backToMenu:hover { background:#00ffff; }
 
 /* ===== GAME CANVAS ===== */
-#gameCanvas {
-  background: radial-gradient(circle at top, #001a33, #003973); /* colorful gradient */
-  border: 2px solid #00e6ff;
-  border-radius: 8px;
-  touch-action: none;
-  width: 100%; /* responsive width */
-  height: auto; /* maintain aspect ratio */
-  max-height: 80vh; /* fits mobile screen */
-}
+#gameCanvas { border:2px solid #00e6ff; background: radial-gradient(circle at top, #001a33, #000); border-radius:10px; box-shadow:0 0 20px #00e6ff; width:95vw; max-width:480px; height:70vh; }
+
+/* ===== HUD ===== */
+.hud { position:absolute; top:10px; width:100%; display:flex; justify-content:space-around; font-size:1rem; color:#fff; z-index:10; }
+
+/* ===== MESSAGE BOX ===== */
+.message-box { position:absolute; bottom:20px; background: rgba(0,0,0,0.6); padding:10px 20px; border-radius:10px; color:#fff; font-size:1rem; opacity:0; transition:opacity 0.4s ease; }
+.message-box.show { opacity:1; }
 
 /* ===== OVERLAY ===== */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-.overlay-content {
-  background: #222;
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-}
-.overlay-content h2 {
-  margin-bottom: 15px;
-}
-.overlay-content button {
-  margin: 5px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  background: #00e6ff;
-  color: #000;
-}
-.overlay-content button:hover {
-  background: #32ff7e;
-}
-
-/* ===== LIFE LOST POPUP ===== */
-.life-lost-popup {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255,0,0,0.5);
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 16px;
-  opacity: 1;
-  transition: opacity 0.5s ease;
-}
+.overlay { position:absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:999; }
+.overlay-content { background: rgba(0,0,40,0.8); border:2px solid #00e6ff; border-radius:12px; padding:30px 40px; text-align:center; box-shadow:0 0 20px #00e6ff; }
+.overlay-content h2 { color:#00e6ff; margin-bottom:20px; }
+.overlay-content button { display:block; margin:10px auto; padding:10px 20px; border:none; border-radius:10px; background:#00e6ff; color:#0b002b; font-weight:bold; cursor:pointer; box-shadow:0 0 10px #00e6ff; transition:0.3s; }
+.overlay-content button:hover { background:#00ffff; box-shadow:0 0 20px #00ffff,0 0 40px #00e6ff; }
