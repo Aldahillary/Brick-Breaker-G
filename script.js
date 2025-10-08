@@ -23,6 +23,7 @@ let ball, paddle;
 let gameRunning = false;
 let gameLoopId;
 let powerUps = [];
+let touchX = null;
 
 // ===== SCREEN SWITCHING =====
 function showScreen(screen) {
@@ -58,29 +59,21 @@ function createLevels() {
 
 // ===== BRICK PATTERNS =====
 function generatePattern(level) {
-  const cols = 6 + Math.min(level, 8); // 6-14 cols
-  const rows = 3 + Math.min(level, 6); // 3-9 rows
+  const cols = 6 + Math.min(level, 8);
+  const rows = 3 + Math.min(level, 6);
   const pattern = [];
-
   for (let r = 0; r < rows; r++) {
     const row = [];
     for (let c = 0; c < cols; c++) {
       let brick = 1;
-      // Triangle/pyramid pattern
-      if (level >= 5 && (c < r || c >= cols - r)) brick = 0;
-      // Checkerboard for high levels
-      if (level >= 8 && (r + c) % 2 === 0) brick = 1;
+      if (level >= 5 && (c < r || c >= cols - r)) brick = 0; // triangle
+      if (level >= 8 && (r + c) % 2 === 0) brick = 1; // checkerboard
       else if (level >= 8) brick = 0;
       row.push(brick);
     }
     pattern.push(row);
   }
   return pattern;
-}
-
-function getBrickColorByHits(hits) {
-  const hitColors = ["#ff3838", "#ff7eff", "#32ff7e", "#fffa65", "#00e6ff"];
-  return hitColors[Math.max(0, hits - 1)];
 }
 
 // ===== GAME SETUP =====
@@ -102,8 +95,7 @@ function setupGame(level) {
           w: brickWidth,
           h: brickHeight,
           broken: false,
-          hits: maxHits,
-          color: getBrickColorByHits(maxHits)
+          hits: maxHits
         });
       }
     }
@@ -120,8 +112,40 @@ function setupGame(level) {
 function drawBricks() {
   bricks.forEach((b) => {
     if (!b.broken) {
-      ctx.fillStyle = b.color;
+      ctx.fillStyle = "#aaa";
       ctx.fillRect(b.x, b.y, b.w, b.h);
+
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+
+      if (b.hits === 3) { // Cage effect
+        for (let i = 1; i < 3; i++) {
+          ctx.beginPath();
+          ctx.moveTo(b.x + (b.w / 3) * i, b.y);
+          ctx.lineTo(b.x + (b.w / 3) * i, b.y + b.h);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(b.x, b.y + (b.h / 3) * i);
+          ctx.lineTo(b.x + b.w, b.y + (b.h / 3) * i);
+          ctx.stroke();
+        }
+      } else if (b.hits === 2) { // Wood effect
+        for (let i = 1; i < 4; i++) {
+          ctx.beginPath();
+          ctx.moveTo(b.x, b.y + (b.h / 4) * i);
+          ctx.lineTo(b.x + b.w, b.y + (b.h / 4) * i);
+          ctx.stroke();
+        }
+      } else if (b.hits === 1) { // Normal brick
+        ctx.beginPath();
+        ctx.moveTo(b.x, b.y);
+        ctx.lineTo(b.x + b.w, b.y + b.h);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(b.x + b.w, b.y);
+        ctx.lineTo(b.x, b.y + b.h);
+        ctx.stroke();
+      }
     }
   });
 }
@@ -149,19 +173,14 @@ function drawLives() {
 // ===== POWER-UPS =====
 function drawPowerUps() {
   powerUps.forEach((p) => {
-    ctx.fillStyle = {
-      life: "#fffa65",
-      paddle: "#32ff7e",
-      speed: "#ff3838"
-    }[p.type];
+    ctx.fillStyle = { life: "#fffa65", paddle: "#32ff7e", speed: "#ff3838" }[p.type];
     ctx.fillRect(p.x, p.y, p.w, p.h);
   });
 }
 
 function updatePowerUps() {
   powerUps.forEach((p, i) => {
-    p.y += 2; // fall speed
-    // Collision with paddle
+    p.y += 2;
     if (
       p.x < paddle.x + paddle.w &&
       p.x + p.w > paddle.x &&
@@ -176,7 +195,6 @@ function updatePowerUps() {
       }
       powerUps.splice(i, 1);
     }
-    // Remove if falls out
     if (p.y > gameCanvas.height) powerUps.splice(i, 1);
   });
 }
@@ -184,6 +202,7 @@ function updatePowerUps() {
 // ===== GAME LOOP =====
 function gameLoop() {
   ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+  updatePaddle();
 
   drawBricks();
   drawPaddle();
@@ -223,8 +242,6 @@ function gameLoop() {
         if (b.hits <= 0) {
           b.broken = true;
           maybeDropPowerUp(b);
-        } else {
-          b.color = getBrickColorByHits(b.hits);
         }
         ball.dy *= -1;
       }
@@ -234,12 +251,9 @@ function gameLoop() {
   // Lose life
   if (ball.y + ball.r > gameCanvas.height) {
     playerLives--;
-    if (playerLives <= 0) {
-      showGameOver();
-      return;
-    } else {
-      resetBall();
-    }
+    if (playerLives <= 0) showGameOver();
+    else resetBall();
+    return;
   }
 
   // Win level
@@ -249,6 +263,16 @@ function gameLoop() {
   }
 
   gameLoopId = requestAnimationFrame(gameLoop);
+}
+
+// ===== UPDATE PADDLE =====
+function updatePaddle() {
+  if (touchX !== null) {
+    const rect = gameCanvas.getBoundingClientRect();
+    let relativeX = touchX - rect.left;
+    relativeX = Math.max(paddle.w / 2, Math.min(gameCanvas.width - paddle.w / 2, relativeX));
+    paddle.x = relativeX - paddle.w / 2;
+  }
 }
 
 // ===== RESET BALL =====
@@ -277,7 +301,6 @@ function maybeDropPowerUp(brick) {
 function createOverlay(title, buttons) {
   const overlay = document.createElement("div");
   overlay.className = "overlay";
-
   const content = document.createElement("div");
   content.className = "overlay-content";
 
@@ -353,26 +376,19 @@ function startGame(level) {
   gameLoop();
 }
 
-// ===== CONTROLS =====
+// ===== MOBILE TOUCH =====
+gameCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); touchX = e.touches[0].clientX; });
+gameCanvas.addEventListener("touchmove", (e) => { e.preventDefault(); touchX = e.touches[0].clientX; });
+gameCanvas.addEventListener("touchend", () => { touchX = null; });
+
+// ===== DESKTOP MOUSE =====
 document.addEventListener("mousemove", (e) => {
   const rect = gameCanvas.getBoundingClientRect();
   let mouseX = e.clientX - rect.left;
-  // Prevent paddle leaving canvas
   mouseX = Math.max(paddle.w / 2, Math.min(gameCanvas.width - paddle.w / 2, mouseX));
   paddle.x = mouseX - paddle.w / 2;
-});
-
-// Mobile touch control
-gameCanvas.addEventListener("touchmove", (e) => {
-  e.preventDefault(); // Prevent scrolling
-  const rect = gameCanvas.getBoundingClientRect();
-  let touchX = e.touches[0].clientX - rect.left;
-  // Prevent paddle leaving canvas
-  touchX = Math.max(paddle.w / 2, Math.min(gameCanvas.width - paddle.w / 2, touchX));
-  paddle.x = touchX - paddle.w / 2;
 });
 
 // ===== INITIALIZE =====
 createLevels();
 showScreen("menu");
-
