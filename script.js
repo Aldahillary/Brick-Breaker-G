@@ -58,17 +58,15 @@ function createLevels() {
 
 // ===== BRICK PATTERNS =====
 function generatePattern(level) {
-  const cols = 6 + Math.min(level, 8); // 6-14 cols
-  const rows = 3 + Math.min(level, 6); // 3-9 rows
+  const cols = 6 + Math.min(level, 8);
+  const rows = 3 + Math.min(level, 6);
   const pattern = [];
 
   for (let r = 0; r < rows; r++) {
     const row = [];
     for (let c = 0; c < cols; c++) {
       let brick = 1;
-      // Triangle/pyramid pattern
       if (level >= 5 && (c < r || c >= cols - r)) brick = 0;
-      // Checkerboard for high levels
       if (level >= 8 && (r + c) % 2 === 0) brick = 1;
       else if (level >= 8) brick = 0;
       row.push(brick);
@@ -160,8 +158,7 @@ function drawPowerUps() {
 
 function updatePowerUps() {
   powerUps.forEach((p, i) => {
-    p.y += 2; // fall speed
-    // Collision with paddle
+    p.y += 2;
     if (
       p.x < paddle.x + paddle.w &&
       p.x + p.w > paddle.x &&
@@ -176,14 +173,21 @@ function updatePowerUps() {
       }
       powerUps.splice(i, 1);
     }
-    // Remove if falls out
     if (p.y > gameCanvas.height) powerUps.splice(i, 1);
   });
 }
 
 // ===== GAME LOOP =====
+let pointerX = null;
+
 function gameLoop() {
   ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+  // Paddle update (mouse or touch)
+  if (pointerX !== null) {
+    let x = Math.max(paddle.w / 2, Math.min(gameCanvas.width - paddle.w / 2, pointerX));
+    paddle.x = x - paddle.w / 2;
+  }
 
   drawBricks();
   drawPaddle();
@@ -353,21 +357,26 @@ function startGame(level) {
   gameLoop();
 }
 
-// ===== MOBILE TOUCH =====
-gameCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); touchX = e.touches[0].clientX; });
-gameCanvas.addEventListener("touchmove", (e) => { e.preventDefault(); touchX = e.touches[0].clientX; });
-gameCanvas.addEventListener("touchend", () => { touchX = null; });
-
-// ===== CONTROLS =====
-document.addEventListener("mousemove", (e) => {
+// ===== POINTER EVENTS (MOUSE + TOUCH) =====
+gameCanvas.addEventListener("mousemove", (e) => {
   const rect = gameCanvas.getBoundingClientRect();
-  let mouseX = e.clientX - rect.left;
-  // Prevent paddle leaving canvas
-  mouseX = Math.max(paddle.w / 2, Math.min(gameCanvas.width - paddle.w / 2, mouseX));
-  paddle.x = mouseX - paddle.w / 2;
+  pointerX = e.clientX - rect.left;
+});
+
+gameCanvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  const rect = gameCanvas.getBoundingClientRect();
+  pointerX = e.touches[0].clientX - rect.left;
+});
+gameCanvas.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  const rect = gameCanvas.getBoundingClientRect();
+  pointerX = e.touches[0].clientX - rect.left;
+});
+gameCanvas.addEventListener("touchend", () => {
+  pointerX = null;
 });
 
 // ===== INITIALIZE =====
 createLevels();
 showScreen("menu");
-
