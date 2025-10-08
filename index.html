@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Brick Breaker</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -30,15 +30,20 @@
 
   <!-- ===== GAME SCREEN ===== -->
   <div id="gameScreen" class="screen">
-    <canvas id="gameCanvas" width="480" height="320"></canvas>
+    <div class="hud">
+      <span id="hudLives">Lives: 3</span>
+      <span id="hudLevel">Level: 1</span>
+      <span id="hudScore">Score: 0</span>
+    </div>
+    <canvas id="gameCanvas"></canvas>
   </div>
 
-  <!-- ===== OVERLAYS (Game Over / Level Complete) ===== -->
-  <!-- These will be dynamically created by JS -->
+  <!-- Overlays will be created dynamically via JS -->
 
-  <!-- Link JavaScript -->
   <script src="script.js"></script>
 </body>
 </html>
+
+
 
 
