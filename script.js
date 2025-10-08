@@ -1,3 +1,4 @@
+<!-- Force GitHub Pages rebuild -->
 // ===== SCREEN MANAGEMENT =====
 const screens = {
   menu: document.getElementById("menu"),
@@ -21,6 +22,7 @@ let playerLives = 3;
 let bricks = [];
 let ball, paddle;
 let gameRunning = false;
+let score = 0;
 
 // ===== SHOW SCREEN =====
 function showScreen(screen) {
@@ -57,26 +59,31 @@ function createLevels() {
 // ===== GAME SETUP =====
 function setupGame(level) {
   bricks = [];
-  const rows = 4 + Math.min(level, 6);
-  const cols = 6 + Math.min(level, 8);
+  const rows = 3 + Math.min(level, 7);
+  const cols = 5 + Math.min(level, 10);
   const brickWidth = gameCanvas.width / cols - 5;
   const brickHeight = 20;
 
+  // Generate unique patterns for each level
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      bricks.push({
-        x: c * (brickWidth + 5) + 5,
-        y: r * (brickHeight + 5) + 40,
-        w: brickWidth,
-        h: brickHeight,
-        broken: false,
-      });
+      // Example: Randomly skip bricks for pattern
+      if (Math.random() > Math.min(level * 0.03, 0.7)) {
+        bricks.push({
+          x: c * (brickWidth + 5) + 5,
+          y: r * (brickHeight + 5) + 40,
+          w: brickWidth,
+          h: brickHeight,
+          broken: false,
+        });
+      }
     }
   }
 
   paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 20, w: 80, h: 10 };
   ball = { x: gameCanvas.width / 2, y: gameCanvas.height - 40, r: 7, dx: 3, dy: -3 };
   playerLives = 3;
+  score = 0;
   gameRunning = true;
 }
 
@@ -103,11 +110,12 @@ function drawBall() {
   ctx.closePath();
 }
 
-function drawLives() {
+function drawHUD() {
   ctx.font = "16px Poppins";
   ctx.fillStyle = "#fff";
   ctx.fillText(`Lives: ${playerLives}`, 10, 20);
   ctx.fillText(`Level: ${currentLevel}`, 200, 20);
+  ctx.fillText(`Score: ${score}`, 350, 20);
 }
 
 // ===== GAME LOOP =====
@@ -117,7 +125,7 @@ function gameLoop() {
   drawBricks();
   drawPaddle();
   drawBall();
-  drawLives();
+  drawHUD();
 
   // Ball movement
   ball.x += ball.dx;
@@ -131,7 +139,8 @@ function gameLoop() {
   if (
     ball.x > paddle.x &&
     ball.x < paddle.x + paddle.w &&
-    ball.y + ball.r > paddle.y
+    ball.y + ball.r > paddle.y &&
+    ball.y - ball.r < paddle.y + paddle.h
   ) {
     ball.dy *= -1;
   }
@@ -147,6 +156,7 @@ function gameLoop() {
       ) {
         b.broken = true;
         ball.dy *= -1;
+        score += 10;
       }
     }
   });
@@ -250,11 +260,11 @@ function startGame(level) {
 }
 
 // ===== CONTROLS =====
-document.addEventListener("mousemove", (e) => {
+// Mouse
+gameCanvas.addEventListener("mousemove", (e) => {
   const rect = gameCanvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
-  paddle.x = mouseX - paddle.w / 2;
-});
+  paddle.x = mouseX - paddle
 
 // ===== INITIALIZE =====
 createLevels();
