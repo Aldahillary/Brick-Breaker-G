@@ -23,7 +23,6 @@ let ball, paddle;
 let gameRunning = false;
 let score = 0;
 
-// Paddle movement
 let rightPressed = false;
 let leftPressed = false;
 
@@ -61,7 +60,6 @@ function createLevels() {
 
 // ===== PREDEFINED PATTERNS =====
 function generatePattern(level) {
-  // Different layouts for first 10 levels, repeat or random after
   const rows = Math.min(3 + level, 8);
   const cols = Math.min(5 + level, 12);
   const brickWidth = gameCanvas.width / cols - 5;
@@ -73,26 +71,13 @@ function generatePattern(level) {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       let addBrick = false;
-
-      // Patterns based on level number
       switch (level % 5) {
-        case 1: // Full wall
-          addBrick = true;
-          break;
-        case 2: // Pyramid
-          if (c >= r && c < cols - r) addBrick = true;
-          break;
-        case 3: // Checkerboard
-          if ((r + c) % 2 === 0) addBrick = true;
-          break;
-        case 4: // Zigzag
-          if (r % 2 === c % 2) addBrick = true;
-          break;
-        case 0: // Random
-          addBrick = Math.random() > 0.3;
-          break;
+        case 1: addBrick = true; break;
+        case 2: if (c >= r && c < cols - r) addBrick = true; break;
+        case 3: if ((r + c) % 2 === 0) addBrick = true; break;
+        case 4: if (r % 2 === c % 2) addBrick = true; break;
+        case 0: addBrick = Math.random() > 0.3; break;
       }
-
       if (addBrick) {
         bricks.push({
           x: c * (brickWidth + 5) + 5,
@@ -111,7 +96,7 @@ function generatePattern(level) {
 function setupGame(level) {
   generatePattern(level);
 
-  paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 20, w: 80, h: 10, speed: 7 };
+  paddle = { x: 0, y: gameCanvas.height - 20, w: 80, h: 10, speed: 7 };
   ball = { x: gameCanvas.width / 2, y: gameCanvas.height - 40, r: 7, dx: 3, dy: -3 };
   playerLives = 3;
   score = 0;
@@ -214,7 +199,7 @@ function gameLoop() {
   if (rightPressed) paddle.x += paddle.speed;
   if (leftPressed) paddle.x -= paddle.speed;
 
-  // Clamp paddle
+  // Clamp paddle fully
   paddle.x = Math.max(0, Math.min(gameCanvas.width - paddle.w, paddle.x));
 
   gameLoopId = requestAnimationFrame(gameLoop);
@@ -231,9 +216,18 @@ function resetBall() {
 // ===== LIFE LOST POPUP =====
 function showLifeLostPopup() {
   const popup = document.createElement("div");
-  popup.className = "message-box show";
+  popup.className = "message-box";
   popup.textContent = "💔 Life Lost!";
-  popup.style.top = "40%";
+  popup.style.position = "absolute";
+  popup.style.top = "10%"; // top instead of middle
+  popup.style.left = "50%";
+  popup.style.transform = "translateX(-50%)";
+  popup.style.padding = "10px 20px";
+  popup.style.background = "rgba(255,0,0,0.7)";
+  popup.style.color = "#fff";
+  popup.style.borderRadius = "10px";
+  popup.style.fontSize = "18px";
+  popup.style.zIndex = "1000";
   document.body.appendChild(popup);
   setTimeout(() => popup.remove(), 800);
 }
@@ -255,7 +249,6 @@ function showLevelComplete() {
     { text: "Main Menu", action: () => showScreen("menu") },
   ]);
   document.body.appendChild(overlay);
-  launchFireworks();
 }
 
 // ===== OVERLAY CREATION =====
@@ -284,30 +277,6 @@ function createOverlay(title, buttons) {
   return overlay;
 }
 
-// ===== FIREWORKS =====
-function launchFireworks() {
-  const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838"];
-  for (let i = 0; i < 20; i++) {
-    const particle = document.createElement("div");
-    particle.style.position = "absolute";
-    particle.style.width = "6px";
-    particle.style.height = "6px";
-    particle.style.borderRadius = "50%";
-    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-    particle.style.top = "50%";
-    particle.style.left = "50%";
-    particle.style.transition = "all 1s ease-out";
-    document.body.appendChild(particle);
-
-    setTimeout(() => {
-      particle.style.transform = `translate(${(Math.random() - 0.5) * 500}px, ${(Math.random() - 0.5) * 500}px)`;
-      particle.style.opacity = "0";
-    }, 50);
-
-    setTimeout(() => particle.remove(), 1200);
-  }
-}
-
 // ===== GAME START =====
 function startGame(level) {
   currentLevel = level;
@@ -322,13 +291,13 @@ function startGame(level) {
 gameCanvas.addEventListener("mousemove", (e) => {
   const rect = gameCanvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
-  paddle.x = mouseX - paddle.w / 2;
+  paddle.x = Math.max(0, Math.min(gameCanvas.width - paddle.w, mouseX - paddle.w / 2));
 });
 gameCanvas.addEventListener("touchmove", (e) => {
   e.preventDefault();
   const rect = gameCanvas.getBoundingClientRect();
   const touchX = e.touches[0].clientX - rect.left;
-  paddle.x = touchX - paddle.w / 2;
+  paddle.x = Math.max(0, Math.min(gameCanvas.width - paddle.w, touchX - paddle.w / 2));
 }, { passive: false });
 
 document.addEventListener("keydown", (e) => {
