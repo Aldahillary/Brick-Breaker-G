@@ -45,8 +45,31 @@ let ball, paddle;
 let gameRunning = false;
 let gameLoopId;
 let powerUps = [];
+let pointerX = null;
 
-// ===== LOCAL STORAGE HELPERS =====
+// ===== RESPONSIVE CANVAS =====
+function resizeCanvas() {
+  const margin = 20;
+  const maxWidth = 480;
+  const width = Math.min(window.innerWidth - margin, maxWidth);
+  const height = width * 0.75;
+
+  gameCanvas.width = width;
+  gameCanvas.height = height;
+
+  if (paddle) {
+    paddle.x = gameCanvas.width / 2 - paddle.w / 2;
+    paddle.y = gameCanvas.height - 20;
+  }
+  if (ball) {
+    ball.x = gameCanvas.width / 2;
+    ball.y = gameCanvas.height - 40;
+  }
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+// ===== LOCAL STORAGE =====
 function getUsers() { return JSON.parse(localStorage.getItem("users") || "{}"); }
 function saveUsers(users) { localStorage.setItem("users", JSON.stringify(users)); }
 function saveProgress() {
@@ -58,26 +81,26 @@ function saveProgress() {
 }
 
 // ===== SCREEN SWITCH =====
-function showScreen(screen){
+function showScreen(screen) {
   Object.values(screens).forEach(s => s.classList.remove("active"));
   screens[screen].classList.add("active");
   cancelAnimationFrame(gameLoopId);
 }
 
 // ===== LOGIN / CREATE ACCOUNT =====
-loginBtnHome.addEventListener("click", ()=>{
+loginBtnHome?.addEventListener("click", () => {
   loginForm.classList.remove("hidden");
   createForm.classList.add("hidden");
 });
-createBtnHome.addEventListener("click", ()=>{
+createBtnHome?.addEventListener("click", () => {
   createForm.classList.remove("hidden");
   loginForm.classList.add("hidden");
 });
-loginBack.addEventListener("click", ()=> loginForm.classList.add("hidden"));
-createBack.addEventListener("click", ()=> createForm.classList.add("hidden"));
+loginBack?.addEventListener("click", () => loginForm.classList.add("hidden"));
+createBack?.addEventListener("click", () => createForm.classList.add("hidden"));
 
 // Create account
-createSubmit.addEventListener("click", ()=>{
+createSubmit?.addEventListener("click", () => {
   const u = createUsername.value.trim();
   const p = createPassword.value.trim();
   createMsg.textContent = "";
@@ -93,7 +116,7 @@ createSubmit.addEventListener("click", ()=>{
 });
 
 // Login
-loginSubmit.addEventListener("click", ()=>{
+loginSubmit?.addEventListener("click", () => {
   const u = loginUsername.value.trim();
   const p = loginPassword.value.trim();
   loginMsg.textContent = "";
@@ -107,24 +130,24 @@ loginSubmit.addEventListener("click", ()=>{
   showScreen("menu");
 });
 
-// Auto-login
+// Auto-login if user exists
 const lastUser = localStorage.getItem("lastUser");
-if (lastUser && getUsers()[lastUser]){
+if (lastUser && getUsers()[lastUser]) {
   currentUser = lastUser;
   currentLevel = getUsers()[lastUser].lastLevel || 1;
   showScreen("menu");
 }
 
 // Logout
-logoutBtn.addEventListener("click", ()=>{
-  currentUser = null;
+logoutBtn?.addEventListener("click", () => {
   localStorage.removeItem("lastUser");
+  currentUser = null;
   showScreen("home");
 });
 
-// ===== MAIN MENU BUTTONS =====
+// ===== MENU BUTTONS =====
 playBtn.onclick = () => startGame(currentLevel);
-levelBtn.onclick = () => { createLevels(); showScreen("levelSelect"); };
+levelBtn.onclick = () => showScreen("levelSelect");
 soundBtn.onclick = () => {
   soundOn = !soundOn;
   soundBtn.textContent = `Sound: ${soundOn ? "On 🔊" : "Off 🔇"}`;
@@ -132,104 +155,76 @@ soundBtn.onclick = () => {
 backToMenu.onclick = () => showScreen("menu");
 
 // ===== LEVEL GRID =====
-function createLevels(){
+function createLevels() {
   levelGrid.innerHTML = "";
-  for (let i=1; i<=totalLevels; i++){
+  for (let i = 1; i <= totalLevels; i++) {
     const btn = document.createElement("button");
     btn.textContent = i;
-    if(i<currentLevel) btn.classList.add("level-cleared");
-    else if(i===currentLevel) btn.classList.add("level-current");
+    if (i < currentLevel) btn.classList.add("level-cleared");
+    else if (i === currentLevel) btn.classList.add("level-current");
     else btn.classList.add("level-locked");
-    btn.disabled = i>currentLevel;
+
+    btn.disabled = i > currentLevel;
     btn.onclick = () => startGame(i);
     levelGrid.appendChild(btn);
   }
 }
 
-// ===== GAME SETUP =====
-function setupGame(level){
-  bricks = [];
+// ===== BRICK PATTERN =====
+function generatePattern(level) {
   const cols = 6 + Math.min(level, 8);
   const rows = 3 + Math.min(level, 6);
+  const pattern = [];
+  for (let r = 0; r < rows; r++) {
+    const row = [];
+    for (let c = 0; c < cols; c++) {
+      let brick = 1;
+      if (level >= 5 && (c < r || c >= cols - r)) brick = 0;
+      if (level >= 8 && (r + c) % 2 === 0) brick = 1;
+      else if (level >= 8) brick = 0;
+      row.push(brick);
+    }
+    pattern.push(row);
+  }
+  return pattern;
+}
+
+function getBrickColorByHits(hits) {
+  const hitColors = ["#ff3838", "#ff7eff", "#32ff7e", "#fffa65", "#00e6ff"];
+  return hitColors[Math.max(0, hits - 1)];
+}
+
+// ===== GAME SETUP =====
+function setupGame(level) {
+  bricks = [];
+  const pattern = generatePattern(level);
+  const rows = pattern.length;
+  const cols = pattern[0].length;
   const brickWidth = gameCanvas.width / cols - 5;
   const brickHeight = 20;
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      bricks.push({
-        x: c*(brickWidth+5)+5,
-        y: r*(brickHeight+5)+40,
-        w: brickWidth,
-        h: brickHeight,
-        broken: false
-      });
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (pattern[r][c] === 1) {
+        const maxHits = Math.min(3, Math.floor(level / 3) + 1);
+        bricks.push({
+          x: c * (brickWidth + 5) + 5,
+          y: r * (brickHeight + 5) + 40,
+          w: brickWidth,
+          h: brickHeight,
+          broken: false,
+          hits: maxHits,
+          color: getBrickColorByHits(maxHits)
+        });
+      }
     }
   }
-  paddle = { x: gameCanvas.width/2-40, y: gameCanvas.height-20, w:80, h:10 };
-  ball = { x: gameCanvas.width/2, y: gameCanvas.height-40, r:7, dx:3, dy:-3 };
+
+  paddle = { x: gameCanvas.width / 2 - 40, y: gameCanvas.height - 20, w: 80, h: 10 };
+  ball = { x: gameCanvas.width / 2, y: gameCanvas.height - 40, r: 7, dx: 3, dy: -3 };
   playerLives = 3;
   powerUps = [];
   gameRunning = true;
-}
-
-// ===== GAME LOOP =====
-function gameLoop(){
-  if(!gameRunning) return;
-  ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
-
-  // Draw bricks
-  bricks.forEach(b => {
-    if(!b.broken){
-      ctx.fillStyle = "#ff3838";
-      ctx.fillRect(b.x,b.y,b.w,b.h);
-    }
-  });
-
-  // Draw paddle
-  ctx.fillStyle = "#00ff00";
-  ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
-
-  // Draw ball
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
-  ctx.closePath();
-
-  // Ball movement
-  ball.x += ball.dx;
-  ball.y += ball.dy;
-
-  // Wall collision
-  if(ball.x+ball.r>gameCanvas.width || ball.x-ball.r<0) ball.dx*=-1;
-  if(ball.y-ball.r<0) ball.dy*=-1;
-  if(ball.y+ball.r>gameCanvas.height) { playerLives--; resetBall(); }
-
-  // Paddle collision
-  if(ball.y+ball.r>=paddle.y && ball.x>paddle.x && ball.x<paddle.x+paddle.w) ball.dy*=-1;
-
-  gameLoopId = requestAnimationFrame(gameLoop);
-}
-
-// Reset ball
-function resetBall(){
-  ball.x = gameCanvas.width/2;
-  ball.y = gameCanvas.height-40;
-  ball.dx = 3;
-  ball.dy = -3;
-  if(playerLives<=0){
-    gameRunning = false;
-    alert("Game Over!");
-    showScreen("menu");
-  }
-}
-
-// ===== START GAME =====
-function startGame(level){
-  currentLevel = level;
-  setupGame(level);
-  createLevels();
-  showScreen("gameScreen");
-  gameLoop();
 }
 
 // ===== DRAW ELEMENTS =====
