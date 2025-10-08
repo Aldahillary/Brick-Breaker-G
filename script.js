@@ -178,18 +178,19 @@ function resetBall() {
 
 // ===== OVERLAYS =====
 function showGameOver() {
-  gameRunning=false;
-  createOverlay("Game Over 💀", [
-    {text:"Replay", action:()=>startGame(currentLevel)}
+  gameRunning = false;
+  const overlay = createOverlay("Game Over 💀", [
+    { text: "Replay", action: () => startGame(currentLevel) },
+    { text: "Main Menu", action: () => showScreen("menu") }, // added Main Menu
   ]);
 }
 
 function showLevelComplete() {
-  gameRunning=false;
-  createOverlay("🎉 Level Cleared!", [
-    {text:"Next Level", action:()=>startGame(currentLevel+1)}
+  gameRunning = false;
+  const overlay = createOverlay("🎉 Level Cleared!", [
+    { text: "Next Level", action: () => startGame(currentLevel + 1) },
+    { text: "Main Menu", action: () => showScreen("menu") }, // added Main Menu
   ]);
-  launchFireworks();
 }
 
 function createOverlay(title, buttons){
@@ -257,3 +258,4 @@ function startGame(level){
 createLevels();
 showScreen("menu");
 resizeCanvas();
+
