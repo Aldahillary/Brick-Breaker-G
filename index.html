@@ -4,39 +4,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Brick Breaker</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ===== MENU SCREEN ===== -->
-  <div id="menu" class="screen active">
-    <h1 class="game-title">BRICK <span>BREAKER</span></h1>
-    <div class="menu-buttons">
-      <button id="playBtn">🎮 Play Game</button>
-      <button id="levelBtn">📜 Select Level</button>
-      <button id="soundBtn">🔊 Sound: On</button>
+  <!-- ===== LOGIN SCREEN ===== -->
+  <div id="loginScreen" class="screen active">
+    <div class="login-container">
+      <h1>Brick Breaker</h1>
+      <input type="text" id="usernameInput" placeholder="Enter your username" />
+      <button id="loginBtn">Login</button>
+      <p id="welcomeMsg"></p>
     </div>
+  </div>
+
+  <!-- ===== MENU SCREEN ===== -->
+  <div id="menu" class="screen">
+    <h2>Main Menu</h2>
+    <button id="playBtn">Play</button>
+    <button id="levelBtn">Select Level</button>
+    <button id="soundBtn">Sound: On 🔊</button>
   </div>
 
   <!-- ===== LEVEL SELECT SCREEN ===== -->
   <div id="levelSelect" class="screen">
     <h2>Select Level</h2>
     <div class="levels-grid"></div>
-    <button id="backToMenu" class="back-btn">⬅ Back to Menu</button>
+    <button id="backToMenu">Back</button>
   </div>
 
   <!-- ===== GAME SCREEN ===== -->
   <div id="gameScreen" class="screen">
-    <canvas id="gameCanvas" width="480" height="320"></canvas>
+    <canvas id="gameCanvas"></canvas>
   </div>
 
-  <!-- Link JavaScript -->
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
