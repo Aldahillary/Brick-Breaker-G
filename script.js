@@ -1,4 +1,3 @@
-<!-- Force GitHub Pages rebuild -->
 // ===== SCREEN MANAGEMENT =====
 const screens = {
   menu: document.getElementById("menu"),
@@ -23,6 +22,7 @@ let bricks = [];
 let ball, paddle;
 let gameRunning = false;
 let score = 0;
+let gameLoopId;
 
 // ===== SHOW SCREEN =====
 function showScreen(screen) {
@@ -64,10 +64,9 @@ function setupGame(level) {
   const brickWidth = gameCanvas.width / cols - 5;
   const brickHeight = 20;
 
-  // Generate unique patterns for each level
+  // Unique patterns per level
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      // Example: Randomly skip bricks for pattern
       if (Math.random() > Math.min(level * 0.03, 0.7)) {
         bricks.push({
           x: c * (brickWidth + 5) + 5,
@@ -91,9 +90,7 @@ function setupGame(level) {
 function drawBricks() {
   ctx.fillStyle = "#00e6ff";
   bricks.forEach((b) => {
-    if (!b.broken) {
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-    }
+    if (!b.broken) ctx.fillRect(b.x, b.y, b.w, b.h);
   });
 }
 
@@ -119,7 +116,6 @@ function drawHUD() {
 }
 
 // ===== GAME LOOP =====
-let gameLoopId;
 function gameLoop() {
   ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
   drawBricks();
@@ -127,7 +123,6 @@ function gameLoop() {
   drawBall();
   drawHUD();
 
-  // Ball movement
   ball.x += ball.dx;
   ball.y += ball.dy;
 
@@ -136,28 +131,16 @@ function gameLoop() {
   if (ball.y - ball.r < 0) ball.dy *= -1;
 
   // Paddle collision
-  if (
-    ball.x > paddle.x &&
-    ball.x < paddle.x + paddle.w &&
-    ball.y + ball.r > paddle.y &&
-    ball.y - ball.r < paddle.y + paddle.h
-  ) {
+  if (ball.x > paddle.x && ball.x < paddle.x + paddle.w && ball.y + ball.r > paddle.y) {
     ball.dy *= -1;
   }
 
   // Brick collision
   bricks.forEach((b) => {
-    if (!b.broken) {
-      if (
-        ball.x > b.x &&
-        ball.x < b.x + b.w &&
-        ball.y - ball.r < b.y + b.h &&
-        ball.y + ball.r > b.y
-      ) {
-        b.broken = true;
-        ball.dy *= -1;
-        score += 10;
-      }
+    if (!b.broken && ball.x > b.x && ball.x < b.x + b.w && ball.y - ball.r < b.y + b.h && ball.y + ball.r > b.y) {
+      b.broken = true;
+      ball.dy *= -1;
+      score += 10;
     }
   });
 
@@ -189,37 +172,18 @@ function resetBall() {
   ball.dy = -3;
 }
 
-// ===== POPUPS =====
-function showGameOver() {
-  gameRunning = false;
-  const overlay = createOverlay("Game Over 💀", [
-    { text: "Replay", action: () => startGame(currentLevel) },
-    { text: "Main Menu", action: () => showScreen("menu") },
-  ]);
-  document.body.appendChild(overlay);
-}
-
-function showLevelComplete() {
-  gameRunning = false;
-  const overlay = createOverlay("🎉 Level Cleared!", [
-    { text: "Next Level", action: () => startGame(currentLevel + 1) },
-    { text: "Main Menu", action: () => showScreen("menu") },
-  ]);
-  document.body.appendChild(overlay);
-  launchFireworks();
-}
-
+// ===== OVERLAYS =====
 function createOverlay(title, buttons) {
   const overlay = document.createElement("div");
   overlay.className = "overlay";
-  
+
   const content = document.createElement("div");
   content.className = "overlay-content";
-  
+
   const heading = document.createElement("h2");
   heading.textContent = title;
   content.appendChild(heading);
-  
+
   buttons.forEach((b) => {
     const btn = document.createElement("button");
     btn.textContent = b.text;
@@ -229,12 +193,29 @@ function createOverlay(title, buttons) {
     };
     content.appendChild(btn);
   });
-  
+
   overlay.appendChild(content);
   document.body.appendChild(overlay);
 }
 
-// ===== FIREWORKS EFFECT =====
+function showGameOver() {
+  gameRunning = false;
+  createOverlay("Game Over 💀", [
+    { text: "Replay", action: () => startGame(currentLevel) },
+    { text: "Main Menu", action: () => showScreen("menu") },
+  ]);
+}
+
+function showLevelComplete() {
+  gameRunning = false;
+  createOverlay("🎉 Level Cleared!", [
+    { text: "Next Level", action: () => startGame(currentLevel + 1) },
+    { text: "Main Menu", action: () => showScreen("menu") },
+  ]);
+  launchFireworks();
+}
+
+// ===== FIREWORKS =====
 function launchFireworks() {
   const colors = ["#00e6ff", "#fffa65", "#32ff7e", "#ff3838"];
   for (let i = 0; i < 20; i++) {
@@ -258,6 +239,27 @@ function launchFireworks() {
   }
 }
 
+// ===== CONTROLS =====
+// Mouse
+gameCanvas.addEventListener("mousemove", (e) => {
+  const rect = gameCanvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  paddle.x = mouseX - paddle.w / 2;
+});
+
+// Touch
+gameCanvas.addEventListener("touchmove", (e) => {
+  const rect = gameCanvas.getBoundingClientRect();
+  const touchX = e.touches[0].clientX - rect.left;
+  paddle.x = touchX - paddle.w / 2;
+});
+
+// Keyboard
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft") paddle.x -= 15;
+  if (e.key === "ArrowRight") paddle.x += 15;
+});
+
 // ===== GAME START =====
 function startGame(level) {
   currentLevel = level;
@@ -268,14 +270,6 @@ function startGame(level) {
   gameLoop();
 }
 
-// ===== CONTROLS =====
-// Mouse
-gameCanvas.addEventListener("mousemove", (e) => {
-  const rect = gameCanvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  paddle.x = mouseX - paddle
-
 // ===== INITIALIZE =====
 createLevels();
 showScreen("menu");
-
