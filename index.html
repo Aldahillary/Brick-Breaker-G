@@ -4,14 +4,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Brick Breaker</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- ===== MENU SCREEN ===== -->
+  <!-- MENU -->
   <div id="menu" class="screen active">
     <h1 class="game-title">BRICK <span>BREAKER</span></h1>
     <div class="menu-buttons">
@@ -21,22 +20,23 @@
     </div>
   </div>
 
-  <!-- ===== LEVEL SELECT SCREEN ===== -->
+  <!-- LEVEL SELECT -->
   <div id="levelSelect" class="screen">
     <h2>Select Level</h2>
     <div class="levels-grid"></div>
-    <button id="backToMenu" class="back-btn">⬅ Back to Menu</button>
+    <button id="backToMenu">⬅ Back to Menu</button>
   </div>
 
-  <!-- ===== GAME SCREEN ===== -->
+  <!-- GAME SCREEN -->
   <div id="gameScreen" class="screen">
     <canvas id="gameCanvas"></canvas>
   </div>
 
-  <!-- Link JavaScript -->
   <script src="script.js"></script>
 </body>
 </html>
+
+
 
 
 
