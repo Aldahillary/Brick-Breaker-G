@@ -212,17 +212,26 @@ function showLevelComplete() {
 function createOverlay(title, buttons) {
   const overlay = document.createElement("div");
   overlay.className = "overlay";
-  overlay.innerHTML = `
-    <div class="overlay-content">
-      <h2>${title}</h2>
-      ${buttons
-        .map(
-          (b) => `<button onclick="this.closest('.overlay').remove(); (${b.action})()"> ${b.text} </button>`
-        )
-        .join("")}
-    </div>
-  `;
-  return overlay;
+  
+  const content = document.createElement("div");
+  content.className = "overlay-content";
+  
+  const heading = document.createElement("h2");
+  heading.textContent = title;
+  content.appendChild(heading);
+  
+  buttons.forEach((b) => {
+    const btn = document.createElement("button");
+    btn.textContent = b.text;
+    btn.onclick = () => {
+      overlay.remove();
+      b.action();
+    };
+    content.appendChild(btn);
+  });
+  
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
 }
 
 // ===== FIREWORKS EFFECT =====
@@ -269,3 +278,4 @@ gameCanvas.addEventListener("mousemove", (e) => {
 // ===== INITIALIZE =====
 createLevels();
 showScreen("menu");
+
